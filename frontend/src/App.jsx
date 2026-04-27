@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { useLocation } from "react-router-dom";
 
 import {Routes, Route} from "react-router-dom";
+import Landing from './pages/Landing/Landing.jsx';
 import Sidebar from './components/layout/sidebar.jsx';
 import Dashboard from './pages/Dashboard/Dashboard.jsx';
 import AISupport from './pages/Support/AISupport.jsx';
@@ -10,16 +12,19 @@ import Settings from "./pages/Settings/Settings";
 
 
 function App() {
+  const location = useLocation();
+
+  const isLanding = location.pathname === "/";
   return (
     <div className="flex min-h-screen bg-background">
       
       {/* Sidebar */}
-      <Sidebar />
+      {!isLanding && <Sidebar />}
 
       {/* Main Content */}
       <div className='flex-1'>
         <Routes>
-          <Route path='/' element={<Dashboard/>}/>
+          <Route path="/" element={<Landing />} /> 
           <Route path='/dashboard' element={<Dashboard/>}/>
           <Route path='/support' element={<AISupport/>}/>
           <Route path='/journal' element={<Journal/>}/>

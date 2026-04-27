@@ -9,7 +9,12 @@ import {
 
 function Dashboard() {
 
-  // ✅ BACK TO ORIGINAL EMOJIS (exact UI feel)
+  const user = JSON.parse(localStorage.getItem("user"));
+
+  const firstName =
+    user?.name && user.name.length > 0
+      ? user.name.split(" ")[0]
+      : "";
   const moods = [
     { name: "Happy", emoji: "😊" },
     { name: "Anxious", emoji: "😟" },
@@ -35,7 +40,7 @@ function Dashboard() {
 
       {/* Header */}
       <h1 className="text-3xl font-bold font-heading text-textPrimary flex items-center gap-2 mb-2">
-        Welcome back
+        Welcome back, {firstName && `${firstName}`} 
         <FontAwesomeIcon icon={faHand} className="text-primary" />
       </h1>
 

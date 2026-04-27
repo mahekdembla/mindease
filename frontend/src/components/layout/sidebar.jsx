@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faHouse,
@@ -8,10 +9,11 @@ import {
   faCircleExclamation,
 } from "@fortawesome/free-solid-svg-icons";
 import { Link, useLocation } from "react-router-dom";
+import CrisisModal from "../common/CrisisModal";
 
 function Sidebar() {
   const location = useLocation();
-
+  const [openCrisis, setOpenCrisis] = useState(false);
   const menuItems = [
     { name: "Dashboard", icon: faHouse, path: "/dashboard" },
     { name: "AI Support", icon: faCommentDots, path: "/support" },
@@ -45,10 +47,9 @@ function Sidebar() {
                 to={item.path}
                 className={`
                   flex items-center gap-3 px-4 py-3 rounded-xl transition-all
-                  ${
-                    isActive
-                      ? "bg-primaryLight text-primary font-medium"
-                      : "text-textSecondary hover:bg-primaryLight hover:text-textPrimary"
+                  ${isActive
+                    ? "bg-primaryLight text-primary font-medium"
+                    : "text-textSecondary hover:bg-primaryLight hover:text-textPrimary"
                   }
                 `}
               >
@@ -64,13 +65,17 @@ function Sidebar() {
       <div className="flex-1" />
 
       {/* 🔻 Bottom Section (FIXED) */}
-      <div className="p-5">
-        <div className="bg-red-100 text-red-600 p-3 rounded-xl flex items-center gap-2 cursor-pointer hover:bg-red-200 transition">
-          <FontAwesomeIcon icon={faCircleExclamation} />
-          Crisis Support
-        </div>
+      <div
+        onClick={() => setOpenCrisis(true)}
+        className="bg-red-100 text-red-600 p-3 rounded-xl flex items-center gap-2 cursor-pointer hover:bg-red-200 transition"
+      >
+        <FontAwesomeIcon icon={faCircleExclamation} />
+        Crisis Support
       </div>
-
+      <CrisisModal
+        isOpen={openCrisis}
+        onClose={() => setOpenCrisis(false)}
+      />
     </div>
   );
 }
