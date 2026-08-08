@@ -9,7 +9,7 @@ import {
 
 function Dashboard() {
 
-  const user = JSON.parse(localStorage.getItem("user"));
+  const user = JSON.parse(localStorage.getItem("currentUser"));
 
   const firstName =
     user?.name && user.name.length > 0

@@ -9,12 +9,16 @@ import AISupport from './pages/Support/AISupport.jsx';
 import Journal from "./pages/Journal/Journal";
 import Insights from "./pages/Insights/Insights";
 import Settings from "./pages/Settings/Settings";
+import Login from "./pages/Auth/Login";
+import Signup from "./pages/Auth/Signup";
 
 
 function App() {
   const location = useLocation();
 
-  const isLanding = location.pathname === "/";
+  const isLanding = location.pathname === "/" ||
+                    location.pathname === "/login" ||
+                    location.pathname === "/signup";
   return (
     <div className="flex min-h-screen bg-background">
       
@@ -30,6 +34,8 @@ function App() {
           <Route path='/journal' element={<Journal/>}/>
           <Route path='/insights' element={<Insights/>}/>
           <Route path='/settings' element={<Settings/>}/>
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
           
         </Routes>
 
