@@ -247,12 +247,7 @@ def chat(req: ChatRequest):
 
 # JOURNAL SAVE FUNCTION
 
-def save_journal(entry):
-
-    data = {
-        "text": entry,
-        "time": str(datetime.now())
-    }
+def save_journal(entry, mood):
 
     try:
         with open("journal.json", "r") as f:
@@ -261,10 +256,25 @@ def save_journal(entry):
     except:
         journals = []
 
+    # Generate unique ID
+    new_id = max(
+        [journal.get("id", 0) for journal in journals],
+        default=0
+    ) + 1
+
+    data = {
+        "id": new_id,
+        "text": entry,
+        "mood": mood,
+        "time": str(datetime.now())
+    }
+
     journals.append(data)
 
     with open("journal.json", "w") as f:
         json.dump(journals, f, indent=4)
+
+    return data
 
 
 # GET JOURNAL ENTRIES
@@ -286,13 +296,90 @@ def get_journal():
 
 class JournalRequest(BaseModel):
     text: str
+    mood: str = ""
 
 
 @app.post("/journal")
 def add_journal(req: JournalRequest):
 
-    save_journal(req.text)
+    data = save_journal(
+        req.text,
+        req.mood
+    )
 
     return {
-        "message": "Saved successfully"
+        "message": "Saved successfully",
+        "entry": data
+    }
+
+
+# UPDATE JOURNAL ENTRY
+
+@app.put("/journal/{journal_id}")
+def update_journal(
+    journal_id: int,
+    req: JournalRequest
+):
+
+    try:
+
+        with open("journal.json", "r") as f:
+            journals = json.load(f)
+
+    except:
+
+        journals = []
+
+    for journal in journals:
+
+        if journal.get("id") == journal_id:
+
+            journal["text"] = req.text
+            journal["mood"] = req.mood
+            journal["time"] = str(datetime.now())
+
+            with open("journal.json", "w") as f:
+                json.dump(journals, f, indent=4)
+
+            return {
+                "message": "Updated successfully",
+                "entry": journal
+            }
+
+    return {
+        "message": "Journal entry not found"
+    }
+
+
+# DELETE JOURNAL ENTRY
+
+@app.delete("/journal/{journal_id}")
+def delete_journal(journal_id: int):
+
+    try:
+
+        with open("journal.json", "r") as f:
+            journals = json.load(f)
+
+    except:
+
+        journals = []
+
+    updated_journals = [
+        journal
+        for journal in journals
+        if journal.get("id") != journal_id
+    ]
+
+    if len(updated_journals) == len(journals):
+
+        return {
+            "message": "Journal entry not found"
+        }
+
+    with open("journal.json", "w") as f:
+        json.dump(updated_journals, f, indent=4)
+
+    return {
+        "message": "Deleted successfully"
     }
