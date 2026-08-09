@@ -1,15 +1,24 @@
 import { useState, useEffect, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPaperPlane, faMicrophone } from "@fortawesome/free-solid-svg-icons";
-import { getReply } from "../../utils/getReply";
+import {
+    faPaperPlane,
+    faMicrophone,
+} from "@fortawesome/free-solid-svg-icons";
+
+import { sendChatMessage } from "../../services/api";
 
 function AISupport() {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+
+    // Latest detected emotion and mental state
+    const [detectedEmotion, setDetectedEmotion] = useState("neutral");
+    const [mentalState, setMentalState] = useState("");
 
     const chatRef = useRef(null);
 
-    // ✅ Load chat history
+    // Load chat history
     useEffect(() => {
         const saved = localStorage.getItem("chatHistory");
 
@@ -17,53 +26,102 @@ function AISupport() {
             setMessages(JSON.parse(saved));
         } else {
             setMessages([
-                { text: "Hi, I'm here to support you 💜", sender: "ai" },
+                {
+                    text: "Hi, I'm here to support you 💜",
+                    sender: "ai",
+                },
             ]);
         }
     }, []);
+
+    // Save chat count
     useEffect(() => {
         localStorage.setItem("chatCount", messages.length);
     }, [messages]);
 
-    // ✅ Save chat history
+    // Save chat history
     useEffect(() => {
         if (messages.length > 0) {
-            localStorage.setItem("chatHistory", JSON.stringify(messages));
+            localStorage.setItem(
+                "chatHistory",
+                JSON.stringify(messages)
+            );
         }
     }, [messages]);
 
-    // ✅ Auto scroll
+    // Auto scroll
     useEffect(() => {
-        chatRef.current?.scrollTo(0, chatRef.current.scrollHeight);
+        chatRef.current?.scrollTo(
+            0,
+            chatRef.current.scrollHeight
+        );
     }, [messages]);
 
-    // ✅ Send message
-    const handleSend = () => {
-        if (!input.trim()) return;
-        const userText = input;
-        const userMessage = { text: userText, sender: "user" };
+    // Send message
+    const handleSend = async (messageText = input) => {
+        if (!messageText.trim() || isLoading) return;
+
+        const userText = messageText.trim();
+
+        const userMessage = {
+            text: userText,
+            sender: "user",
+        };
 
         setMessages((prev) => [...prev, userMessage]);
         setInput("");
+        setIsLoading(true);
 
-        // simulate AI delay
-        setTimeout(() => {
+        try {
+            // Send message to FastAPI backend
+            const data = await sendChatMessage(userText);
+
+            // Update detection capsule
+            setDetectedEmotion(data.emotion || "neutral");
+            setMentalState(data.mental_state || "");
+
             const aiMessage = {
-                text: getReply(userText),
+                text: data.response,
+                sender: "ai",
+                emotion: data.emotion,
+                mental_state: data.mental_state,
+                top_emotions: data.top_emotions,
+            };
+
+            setMessages((prev) => [
+                ...prev,
+                aiMessage,
+            ]);
+
+        } catch (error) {
+            console.error("Backend error:", error);
+
+            const errorMessage = {
+                text:
+                    "I'm having trouble connecting right now. Please try again in a moment. 💜",
                 sender: "ai",
             };
 
-            setMessages((prev) => [...prev, aiMessage]);
-        }, 600);
+            setMessages((prev) => [
+                ...prev,
+                errorMessage,
+            ]);
+
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    // 🎤 Voice input
+    // Voice input
     const startListening = () => {
         const SpeechRecognition =
-            window.SpeechRecognition || window.webkitSpeechRecognition;
+            window.SpeechRecognition ||
+            window.webkitSpeechRecognition;
 
         if (!SpeechRecognition) {
-            alert("Your browser does not support voice input");
+            alert(
+                "Your browser does not support voice input"
+            );
             return;
         }
 
@@ -80,17 +138,23 @@ function AISupport() {
         };
 
         recognition.onresult = (event) => {
-            const speechText = event.results[0][0].transcript;
+            const speechText =
+                event.results[0][0].transcript;
+
             setInput(speechText);
 
-            setTimeout(() => {
-                handleSend();
-            }, 500);
+            handleSend(speechText);
         };
 
         recognition.onerror = (event) => {
-            console.error("Voice error:", event.error);
-            alert("Mic error: " + event.error);
+            console.error(
+                "Voice error:",
+                event.error
+            );
+
+            alert(
+                "Mic error: " + event.error
+            );
         };
 
         recognition.onend = () => {
@@ -98,30 +162,90 @@ function AISupport() {
         };
     };
 
+    // Emotion color
+    const getEmotionColor = () => {
+        if (detectedEmotion === "positive") {
+            return "text-green-600";
+        }
+
+        if (detectedEmotion === "anxiety") {
+            return "text-orange-500";
+        }
+
+        if (detectedEmotion === "anger") {
+            return "text-red-600";
+        }
+
+        if (detectedEmotion === "negative") {
+            return "text-blue-600";
+        }
+
+        if (detectedEmotion === "crisis") {
+            return "text-red-800";
+        }
+
+        return "text-gray-500";
+    };
+
     return (
         <div className="p-8 w-full flex flex-col h-screen">
 
             {/* Header */}
-            <h1 className="text-2xl font-heading font-semibold text-textPrimary mb-4">
-                AI Support
-            </h1>
+            <div className="flex items-start justify-between mb-4">
+
+                {/* Title */}
+                <div>
+                    <h1 className="text-2xl font-heading font-semibold text-textPrimary">
+                        AI Support
+                    </h1>
+
+                    <p className="text-sm text-textSecondary mt-1">
+                        Your compassionate AI companion
+                    </p>
+                </div>
+
+                {/* Detection Capsule */}
+                <div className="bg-primaryLight px-4 py-2 rounded-full text-sm font-semibold shadow-sm">
+
+                    <span className="text-textPrimary">
+                        Detected:{" "}
+                    </span>
+
+                    <span className={getEmotionColor()}>
+                        {detectedEmotion}
+                        {mentalState && ` | ${mentalState}`}
+                    </span>
+
+                </div>
+
+            </div>
 
             {/* Chat */}
             <div
                 ref={chatRef}
                 className="flex-1 bg-card border border-border rounded-2xl p-4 overflow-y-auto flex flex-col gap-3"
             >
+
                 {messages.map((msg, index) => (
                     <div
                         key={index}
-                        className={`max-w-md p-3 rounded-xl text-sm ${msg.sender === "user"
-                            ? "bg-primary text-white self-end"
-                            : "bg-primaryLight text-textPrimary self-start"
-                            }`}
+                        className={`max-w-md p-3 rounded-xl text-sm ${
+                            msg.sender === "user"
+                                ? "bg-primary text-white self-end"
+                                : "bg-primaryLight text-textPrimary self-start"
+                        }`}
                     >
                         {msg.text}
                     </div>
                 ))}
+
+                {/* Loading */}
+                {isLoading && (
+                    <div className="max-w-md p-3 rounded-xl text-sm bg-primaryLight text-textPrimary self-start">
+                        Thinking... 💭
+                    </div>
+                )}
+
             </div>
 
             {/* Input */}
@@ -130,31 +254,49 @@ function AISupport() {
                 <input
                     type="text"
                     value={input}
-                    onChange={(e) => setInput(e.target.value)}
+                    onChange={(e) =>
+                        setInput(e.target.value)
+                    }
                     placeholder="Type your message..."
                     className="flex-1 p-3 rounded-xl border border-border outline-none"
                     onKeyDown={(e) => {
-                        if (e.key === "Enter") handleSend();
+                        if (
+                            e.key === "Enter" &&
+                            !e.shiftKey
+                        ) {
+                            handleSend();
+                        }
                     }}
+                    disabled={isLoading}
                 />
 
-                {/* 🎤 Voice */}
+                {/* Voice */}
                 <button
                     onClick={startListening}
-                    className="px-3 rounded-xl border border-border bg-card"
+                    disabled={isLoading}
+                    className="px-3 rounded-xl border border-border bg-card disabled:opacity-50"
                 >
-                    <FontAwesomeIcon icon={faMicrophone} />
+                    <FontAwesomeIcon
+                        icon={faMicrophone}
+                    />
                 </button>
 
                 {/* Send */}
                 <button
-                    onClick={handleSend}
-                    className="bg-primary text-white px-4 rounded-xl"
+                    onClick={() => handleSend()}
+                    disabled={
+                        isLoading ||
+                        !input.trim()
+                    }
+                    className="bg-primary text-white px-4 rounded-xl disabled:opacity-50"
                 >
-                    <FontAwesomeIcon icon={faPaperPlane} />
+                    <FontAwesomeIcon
+                        icon={faPaperPlane}
+                    />
                 </button>
 
             </div>
+
         </div>
     );
 }

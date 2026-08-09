@@ -1,0 +1,17 @@
+# Frontend
+frontend/node_modules/
+frontend/.env
+frontend/.env.local
+
+# Backend
+backend/__pycache__/
+backend/.venv/
+backend/venv/
+
+# Python
+*.pyc
+
+# Runtime data
+backend/chat_history.json
+backend/journal.json
+backend/Journal.json

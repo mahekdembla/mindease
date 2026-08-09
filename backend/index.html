@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MindEase</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+    <h2>💜 MindEase</h2>
+    <ul>
+        <li>Dashboard</li>
+        <li onclick="window.location.href='index.html'">AI Support</li>
+        <li onclick="window.location.href='journal.html'">Journal</li>
+        <li>Insights</li>
+        <li>Settings</li>
+    </ul>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main">
+
+    <!-- HEADER -->
+    <div class="header">
+        <div>
+            <h1>AI Support</h1>
+            <p>Your compassionate AI companion</p>
+        </div>
+
+        <div class="emotion-box">
+            Detected: <span id="emotion">Neutral</span>
+        </div>
+    </div>
+
+    <!-- CHATBOX -->
+    <div id="chatbox">
+        <div class="bot">
+            <span>Hello! I'm here to support you. How are you feeling today? 💜</span>
+        </div>
+    </div>
+
+    <!-- INPUT -->
+    <div class="input-area">
+        <input id="msg" placeholder="Type your message..." />
+        <button onclick="send()">Send</button>
+    </div>
+
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
