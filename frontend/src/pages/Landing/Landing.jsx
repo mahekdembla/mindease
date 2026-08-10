@@ -18,14 +18,25 @@ function Landing() {
         <div className="flex gap-4 items-center">
           <button
             onClick={() => navigate("/login")}
-            className="text-textSecondary"
+            className="
+                text-textSecondary
+                transition-all duration-200
+                hover:text-primary
+                hover:scale-105
+            "
           >
             Log In
           </button>
 
           <button
-            onClick={() => navigate("/signup")}
-            className="bg-primary text-white px-4 py-2 rounded-xl"
+              onClick={() => navigate("/signup")}
+              className="
+                  bg-primary text-white px-4 py-2 rounded-xl
+                  transition-all duration-200
+                  hover:bg-primary/90
+                  hover:scale-105
+                  hover:shadow-lg
+              "
           >
             Sign Up
           </button>
