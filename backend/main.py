@@ -4,6 +4,10 @@ from pydantic import BaseModel
 from transformers import pipeline
 import json
 from datetime import datetime
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import os
 
 # INIT APP
 
@@ -32,6 +36,11 @@ emotion_model = pipeline(
 mental_model = pipeline(
     "text-classification",
     model="bhadresh-savani/distilbert-base-uncased-emotion"
+)
+
+safety_model = pipeline(
+    "zero-shot-classification",
+    model="cross-encoder/nli-distilroberta-base"
 )
 
 print("Models loaded successfully!")
@@ -83,19 +92,47 @@ def generate_response(emotion, mental_state):
         return "I'm here for you. Tell me more about what's on your mind."
 
 
-# CRISIS DETECTION
+# SAFETY DETECTION
 
-def is_crisis(text):
+def evaluate_safety(text):
+    text_lower = text.lower()
+    
+    # Context check for false positives
+    safe_contexts = ["movie", "friend", "character", "book", "song"]
+    
+    if any(ctx in text_lower for ctx in safe_contexts):
+        return {
+            "riskLevel": "LOW",
+            "confidence": 1.0,
+            "requiresSafetyFlow": False
+        }
 
-    keywords = [
-        "suicide",
-        "kill myself",
-        "end my life",
-        "killing myself",
-        "commit suicide"
-    ]
-
-    return any(k in text.lower() for k in keywords)
+    candidate_labels = ["safe", "emotional distress", "immediate danger or self harm"]
+    result = safety_model(text, candidate_labels)
+    
+    scores = dict(zip(result['labels'], result['scores']))
+    
+    danger_score = scores.get("immediate danger or self harm", 0)
+    distress_score = scores.get("emotional distress", 0)
+    
+    if danger_score > 0.6:
+        return {
+            "riskLevel": "HIGH",
+            "confidence": round(danger_score, 2),
+            "requiresSafetyFlow": True
+        }
+    elif distress_score > 0.7:
+        return {
+            "riskLevel": "MEDIUM",
+            "confidence": round(distress_score, 2),
+            "requiresSafetyFlow": True
+        }
+    else:
+        return {
+            "riskLevel": "LOW",
+            "confidence": round(scores.get("safe", 0), 2),
+            "requiresSafetyFlow": False
+        }
 
 
 # SAVE CHAT
@@ -130,6 +167,50 @@ def home():
     return {"message": "MindEase Dual Model Backend Running"}
 
 
+# SOS EMAIL API
+
+class SosRequest(BaseModel):
+    emails: list[str]
+
+@app.post("/api/sos")
+def send_sos(req: SosRequest):
+    sender_email = os.environ.get("SENDER_EMAIL", "tgurubani@gmail.com")
+    sender_password = os.environ.get("SENDER_PASSWORD", "cbsd nhxx wooo ghmw")
+    
+    if sender_email == "your-email@gmail.com":
+        print("WARNING: Email not sent. Please set SENDER_EMAIL and SENDER_PASSWORD environment variables.")
+        return {"message": "Simulated sending emails. Set credentials to actually send."}
+
+    subject = "MindEase SOS Alert"
+    body = """
+    <h2>MindEase SOS Alert</h2>
+    <p>Your friend is not feeling okay right now and has indicated through MindEase that they may need immediate support.</p>
+    <p><strong>Please check on them as soon as you can.</strong></p>
+    """
+    
+    try:
+        # Assuming Gmail for this example
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.starttls()
+        server.login(sender_email, sender_password)
+        
+        for recipient in req.emails:
+            msg = MIMEMultipart()
+            msg["From"] = sender_email
+            msg["To"] = recipient
+            msg["Subject"] = subject
+            msg.attach(MIMEText(body, "html"))
+            
+            server.send_message(msg)
+            
+        server.quit()
+        return {"message": f"Successfully sent SOS to {len(req.emails)} contacts."}
+        
+    except Exception as e:
+        print(f"Failed to send email: {e}")
+        return {"error": str(e)}
+
+
 # CHAT API
 
 @app.post("/chat")
@@ -137,27 +218,24 @@ def chat(req: ChatRequest):
 
     user_input = req.message
 
-    # CRISIS HANDLING
+    # SAFETY EVALUATION
+    safety_result = evaluate_safety(user_input)
 
-    if is_crisis(user_input):
-
-        response = (
-            "I'm really sorry you're feeling this way 💜 "
-            "You're not alone. Please consider reaching out "
-            "to a trusted person or a helpline."
-        )
-
+    if safety_result["riskLevel"] == "HIGH":
+        response = "I'm really sorry you're going through this. Your safety is important. You don't have to handle this alone."
+        
         save_chat(
             user_input,
             response,
             "crisis",
             "critical"
         )
-
+        
         return {
             "response": response,
             "emotion": "crisis",
-            "mental_state": "critical"
+            "mental_state": "critical",
+            "safety": safety_result
         }
 
 
@@ -241,7 +319,8 @@ def chat(req: ChatRequest):
         "response": response,
         "emotion": final_emotion,
         "mental_state": mental_state,
-        "top_emotions": raw_emotions
+        "top_emotions": raw_emotions,
+        "safety": safety_result
     }
 
 # GET CHAT HISTORY

@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-    faHouse,
-    faCommentDots,
-    faBook,
-    faChartLine,
-    faGear,
-    faCircleExclamation,
+  faHouse,
+  faCommentDots,
+  faBook,
+  faChartLine,
+  faGear,
+  faCircleExclamation,
+  faRightFromBracket,
+  faShieldHeart,
 } from "@fortawesome/free-solid-svg-icons";
 import { Link, useLocation } from "react-router-dom";
 import CrisisModal from "../common/CrisisModal";
@@ -35,6 +37,11 @@ function Sidebar() {
             name: "Insights",
             icon: faChartLine,
             path: "/insights",
+        },
+       {
+             name: "Safe Place",
+             icon: faShieldHeart,
+              path: "/safeplace",
         },
         {
             name: "Settings",
