@@ -44,8 +44,14 @@ function Dashboard() {
 
       {/* Header */}
       <h1 className="text-3xl font-bold font-heading text-textPrimary flex items-center gap-2 mb-2">
-        Welcome back, {firstName && `${firstName}`} 
-        <FontAwesomeIcon icon={faHand} className="text-primary" />
+          {firstName
+              ? `Welcome back, ${firstName}!`
+              : "Welcome to MindEase!"}
+
+          <FontAwesomeIcon
+              icon={faHand}
+              className="text-primary"
+          />
       </h1>
 
       <p className="text-textSecondary mb-6">

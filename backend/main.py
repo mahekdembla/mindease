@@ -323,6 +323,17 @@ def chat(req: ChatRequest):
         "safety": safety_result
     }
 
+# GET CHAT HISTORY
+
+@app.get("/chat-history")
+def get_chat_history():
+
+    try:
+        with open("chat_history.json", "r") as f:
+            return json.load(f)
+
+    except:
+        return []
 
 # JOURNAL SAVE FUNCTION
 
