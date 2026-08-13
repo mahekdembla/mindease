@@ -8,6 +8,7 @@ import {
   faGear,
   faCircleExclamation,
   faRightFromBracket,
+  faShieldHeart,
 } from "@fortawesome/free-solid-svg-icons";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import CrisisModal from "../common/CrisisModal";
@@ -22,6 +23,7 @@ function Sidebar() {
     { name: "AI Support", icon: faCommentDots, path: "/support" },
     { name: "Journal", icon: faBook, path: "/journal" },
     { name: "Insights", icon: faChartLine, path: "/insights" },
+    { name: "Safe Place", icon: faShieldHeart, path: "/safeplace" },
     { name: "Settings", icon: faGear, path: "/settings" },
   ];
 

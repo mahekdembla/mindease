@@ -11,6 +11,12 @@ function Settings() {
   const [darkMode, setDarkMode] = useState(
     localStorage.getItem("theme") === "dark"
   );
+  const [aiSafety, setAiSafety] = useState(
+    localStorage.getItem("aiSafety") !== "false"
+  );
+  const [autoSos, setAutoSos] = useState(
+    localStorage.getItem("autoSos") === "true"
+  );
 
   // Load currently logged-in user's details
   useEffect(() => {
@@ -209,6 +215,63 @@ function Settings() {
               </div>
             </div>
 
+          </div>
+        </div>
+
+        {/* 🔹 SAFETY SETTINGS */}
+        <div className="bg-card p-6 rounded-2xl border">
+          <h2 className="font-semibold mb-4">
+            AI Safety Settings
+          </h2>
+
+          <div className="space-y-5">
+            {/* AI Safety Detection */}
+            <div className="flex justify-between items-start gap-4">
+              <div>
+                <p className="font-medium">Enable AI Safety Detection</p>
+                <p className="text-sm text-textSecondary mt-1">MindEase can identify messages that may indicate a serious safety concern and offer to connect you with someone you trust.</p>
+              </div>
+
+              <div
+                onClick={() => {
+                  setAiSafety(!aiSafety);
+                  localStorage.setItem("aiSafety", !aiSafety);
+                }}
+                className={`w-12 h-6 flex items-center rounded-full p-1 cursor-pointer transition flex-shrink-0 mt-1
+                  ${aiSafety ? "bg-primary" : "bg-gray-300"}
+                `}
+              >
+                <div
+                  className={`bg-white w-4 h-4 rounded-full shadow-md transform transition
+                    ${aiSafety ? "translate-x-6" : ""}
+                  `}
+                />
+              </div>
+            </div>
+
+            {/* Automatic SOS */}
+            <div className="flex justify-between items-start gap-4">
+              <div>
+                <p className="font-medium">Enable Automatic SOS</p>
+                <p className="text-sm text-textSecondary mt-1">When enabled, MindEase may notify your selected Safe Place contact when a high-risk safety concern is detected.</p>
+              </div>
+
+              <div
+                onClick={() => {
+                  setAutoSos(!autoSos);
+                  localStorage.setItem("autoSos", !autoSos);
+                }}
+                className={`w-12 h-6 flex items-center rounded-full p-1 cursor-pointer transition flex-shrink-0 mt-1
+                  ${autoSos ? "bg-primary" : "bg-gray-300"}
+                `}
+              >
+                <div
+                  className={`bg-white w-4 h-4 rounded-full shadow-md transform transition
+                    ${autoSos ? "translate-x-6" : ""}
+                  `}
+                />
+              </div>
+            </div>
           </div>
         </div>
 

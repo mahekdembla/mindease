@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faHand,
@@ -8,6 +10,8 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 
 function Dashboard() {
+  const navigate = useNavigate();
+  const [selectedMood, setSelectedMood] = useState(null);
 
   const user = JSON.parse(localStorage.getItem("currentUser"));
 
@@ -58,6 +62,7 @@ function Dashboard() {
         {moods.map((mood) => (
           <div
             key={mood.name}
+            onClick={() => setSelectedMood(mood.name)}
             className={`
               h-28 w-full
               rounded-2xl border border-border bg-card
@@ -66,6 +71,7 @@ function Dashboard() {
               hover:shadow-sm
 
               ${getHoverStyle(mood.name)}
+              ${selectedMood === mood.name ? "ring-2 ring-primary scale-105 shadow-md" : ""}
             `}
           >
             {/* ✅ EMOJI BACK */}
@@ -87,7 +93,10 @@ function Dashboard() {
       <div className="grid grid-cols-3 gap-6 w-full">
 
         {/* AI Support */}
-        <div className="p-6 bg-card border border-border rounded-2xl hover:shadow-md hover:-translate-y-1 transition cursor-pointer">
+        <div 
+          onClick={() => navigate('/support')}
+          className="p-6 bg-card border border-border rounded-2xl hover:shadow-md hover:-translate-y-1 transition cursor-pointer"
+        >
           <div className="w-12 h-12 flex items-center justify-center bg-primaryLight rounded-xl mb-4">
             <FontAwesomeIcon icon={faComments} className="text-primary" />
           </div>
@@ -100,7 +109,10 @@ function Dashboard() {
         </div>
 
         {/* Journal */}
-        <div className="p-6 bg-card border border-border rounded-2xl hover:shadow-md hover:-translate-y-1 transition cursor-pointer">
+        <div 
+          onClick={() => navigate('/journal')}
+          className="p-6 bg-card border border-border rounded-2xl hover:shadow-md hover:-translate-y-1 transition cursor-pointer"
+        >
           <div className="w-12 h-12 flex items-center justify-center bg-primaryLight rounded-xl mb-4">
             <FontAwesomeIcon icon={faBook} className="text-primary" />
           </div>
@@ -113,7 +125,10 @@ function Dashboard() {
         </div>
 
         {/* Mood Insights */}
-        <div className="p-6 bg-card border border-border rounded-2xl hover:shadow-md hover:-translate-y-1 transition cursor-pointer">
+        <div 
+          onClick={() => navigate('/insights')}
+          className="p-6 bg-card border border-border rounded-2xl hover:shadow-md hover:-translate-y-1 transition cursor-pointer"
+        >
           <div className="w-12 h-12 flex items-center justify-center bg-primaryLight rounded-xl mb-4">
             <FontAwesomeIcon icon={faChartLine} className="text-primary" />
           </div>

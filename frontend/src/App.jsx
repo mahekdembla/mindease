@@ -9,6 +9,7 @@ import AISupport from './pages/Support/AISupport.jsx';
 import Journal from "./pages/Journal/Journal";
 import Insights from "./pages/Insights/Insights";
 import Settings from "./pages/Settings/Settings";
+import SafePlace from "./pages/SafePlace/SafePlace";
 import Login from "./pages/Auth/Login";
 import Signup from "./pages/Auth/Signup";
 
@@ -34,6 +35,7 @@ function App() {
           <Route path='/journal' element={<Journal/>}/>
           <Route path='/insights' element={<Insights/>}/>
           <Route path='/settings' element={<Settings/>}/>
+          <Route path='/safeplace' element={<SafePlace/>}/>
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           
