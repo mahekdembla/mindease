@@ -1,0 +1,1001 @@
+id,text,emotion_label,fine_grained_class,mental_state,context,source
+1,"I feel really discouraged this whole term, a broken laptop right before a deadline keeps pulling me down.",negative,negative,sadness,chat,synthetic
+2,"Everything about my performance review is irritating me for a while now, especially family expectations.",anger,anger,anger,chat,synthetic
+3,I keep imagining worst-case scenarios about the sprint deadline since yesterday.,anxiety,anxiety,fear,chat,synthetic
+4,"I feel so cared for by my roommate, especially since morning.",positive,love,love,journal,synthetic
+5,The weather has been pretty average all afternoon.,neutral,neutral,neutral,journal,synthetic
+6,"I feel on edge recently, my portfolio is stressing me out more than usual.",anxiety,anxiety,fear,journal,synthetic
+7,"I'm boiling over my research paper since yesterday, especially after an argument at home.",anger,anger,anger,journal,synthetic
+8,"I feel trapped, like there's no way out of losing my train of thought during a presentation.",crisis,crisis,sadness,chat,synthetic
+9,"I feel really discouraged since last night, a missed deadline keeps pulling me down.",negative,negative,sadness,journal,synthetic
+10,Met with my classmates to discuss my final year project recently.,neutral,neutral,neutral,chat,synthetic
+11,I keep imagining worst-case scenarios about the client demo all week.,anxiety,anxiety,fear,journal,synthetic
+12,Didn't see that coming — learning something new I'm excited about out of nowhere since yesterday.,positive,surprise,surprise,journal,synthetic
+13,"I'm so frustrated with the client demo, getting rejected from an internship has completely thrown me off.",anger,anger,anger,chat,synthetic
+14,"I feel so worked up over unexpected extra work, it's hard to calm down this whole term.",anger,anger,anger,chat,synthetic
+15,"I don't really feel like doing anything this month, an unclear set of instructions has drained me.",negative,negative,sadness,journal,synthetic
+16,"I feel so worthless since last night, like nothing I do matters to anyone.",crisis,crisis,sadness,chat,synthetic
+17,"I feel so cared for by my landlord, especially recently.",positive,love,love,chat,synthetic
+18,"getting my certificate happened completely out of the blue for the past few days, still processing it.",positive,surprise,surprise,journal,synthetic
+19,"I feel like such a burden to my roommate, everyone would be better off without me.",crisis,crisis,sadness,chat,synthetic
+20,"I feel so worked up over money problems, it's hard to calm down for a while now.",anger,anger,anger,journal,synthetic
+21,Honestly shocked that not getting enough sleep turned out this way this month.,positive,surprise,surprise,journal,synthetic
+22,"I feel so worked up over losing track of time, it's hard to calm down these days.",anger,anger,anger,chat,synthetic
+23,Just the thought of the client demo makes my chest feel tight for a while now.,anxiety,anxiety,fear,journal,synthetic
+24,"I've been feeling really low since last night, mostly because of conflicting priorities.",negative,negative,sadness,chat,synthetic
+25,"I don't feel like myself anymore, I just feel numb to everything this month.",crisis,crisis,sadness,journal,synthetic
+26,My stomach's been in knots since morning thinking about my lab work.,anxiety,anxiety,fear,chat,synthetic
+27,"I'm dreading my dissertation defense, my heart races just thinking about it.",anxiety,anxiety,fear,journal,synthetic
+28,"I'm so frustrated with my internship, a fight with a friend has completely thrown me off.",anger,anger,anger,journal,synthetic
+29,"I'm boiling over the sprint deadline all week, especially after unfair feedback.",anger,anger,anger,chat,synthetic
+30,I keep feeling disappointed in myself all week because of losing track of time.,negative,negative,sadness,journal,synthetic
+31,"a long walk with a friend happened completely out of the blue since morning, still processing it.",positive,surprise,surprise,journal,synthetic
+32,"I've been isolating myself lately, a low grade just left me feeling down.",negative,negative,sadness,journal,synthetic
+33,Planning to start working on my viva tomorrow.,neutral,neutral,neutral,chat,synthetic
+34,My stomach's been in knots all afternoon thinking about my capstone project.,anxiety,anxiety,fear,chat,synthetic
+35,I've been overthinking my driving test lately and it's making it hard to sleep.,anxiety,anxiety,fear,chat,synthetic
+36,a delayed response from someone important again? I'm honestly losing my patience since the results came out.,anger,anger,anger,journal,synthetic
+37,"Wasn't expecting my manager to bring up exams all week, took me by surprise.",positive,surprise,surprise,chat,synthetic
+38,"I don't feel like myself anymore, I just feel numb to everything all week.",crisis,crisis,sadness,journal,synthetic
+39,Never in a million years did I think cooking a good meal would happen this week.,positive,surprise,surprise,chat,synthetic
+40,"my cousin surprised me with their kindness today, I feel really loved.",positive,love,love,chat,synthetic
+41,"Took some notes on college assignments since the deadline got moved up, nothing major to report.",neutral,neutral,neutral,journal,synthetic
+42,I've been overthinking my dissertation defense since last night and it's making it hard to sleep.,anxiety,anxiety,fear,chat,synthetic
+43,"I don't feel like myself anymore, I just feel numb to everything this whole term.",crisis,crisis,sadness,chat,synthetic
+44,"It's rare that I feel this good, but a long walk with a friend really did it these days.",positive,positive,joy,journal,synthetic
+45,"I feel trapped, like there's no way out of constant comparisons.",crisis,crisis,sadness,journal,synthetic
+46,"Things are finally going well with my group project, feeling optimistic about it.",positive,positive,joy,journal,synthetic
+47,Honestly this whole term has been great — clearing a tough interview and I feel proud of myself.,positive,positive,joy,chat,synthetic
+48,"I've been feeling really low all week, mostly because of a fight with a friend.",negative,negative,sadness,chat,synthetic
+49,"It's rare that I feel this good, but getting positive feedback from my mentor really did it these days.",positive,positive,joy,journal,synthetic
+50,"I'm so happy about cooking a good meal, it really made my for a while now.",positive,positive,joy,journal,synthetic
+51,"I feel so worthless these days, like nothing I do matters to anyone.",crisis,crisis,sadness,journal,synthetic
+52,"I'm fed up with my performance review since last night, miscommunication with my team is the last straw.",anger,anger,anger,journal,synthetic
+53,I keep imagining worst-case scenarios about my part-time job since morning.,anxiety,anxiety,fear,journal,synthetic
+54,"I'm genuinely excited since last night, getting appreciated in front of my team made everything feel worth it.",positive,positive,joy,journal,synthetic
+55,Just finished going over notes for exams.,neutral,neutral,neutral,chat,synthetic
+56,I organized my schedule for my group project all afternoon.,neutral,neutral,neutral,chat,synthetic
+57,"I feel like such a burden to my best friend, everyone would be better off without me.",crisis,crisis,sadness,journal,synthetic
+58,I have the client demo coming up and I can't stop worrying about it.,anxiety,anxiety,fear,journal,synthetic
+59,Never in a million years did I think a surprise call from an old friend would happen these days.,positive,surprise,surprise,journal,synthetic
+60,"Everything about my dissertation defense is irritating me this semester, especially a delayed response from someone important.",anger,anger,anger,journal,synthetic
+61,"I've been isolating myself since the deadline got moved up, a missed deadline just left me feeling down.",negative,negative,sadness,chat,synthetic
+62,a low grade again? I'm honestly losing my patience for the past few days.,anger,anger,anger,journal,synthetic
+63,Reviewed the checklist for my thesis defense for a while now.,neutral,neutral,neutral,journal,synthetic
+64,Honestly shocked that a low grade turned out this way this month.,positive,surprise,surprise,journal,synthetic
+65,Didn't see that coming — finishing my project early out of nowhere this month.,positive,surprise,surprise,chat,synthetic
+66,"Just wanted to share that cooking a good meal, I'm on top of the world right now.",positive,positive,joy,chat,synthetic
+67,"Just wanted to share that wrapping up a big project, I'm on top of the world right now.",positive,positive,joy,journal,synthetic
+68,"I feel so cared for by my manager, especially today.",positive,love,love,journal,synthetic
+69,I organized my schedule for college assignments recently.,neutral,neutral,neutral,journal,synthetic
+70,Feeling really accomplished this whole term after spending time with my family.,positive,positive,joy,chat,synthetic
+71,"I'm fed up with exams for the past few days, overthinking everything is the last straw.",anger,anger,anger,chat,synthetic
+72,"I can't believe family expectations, it's making me so angry lately.",anger,anger,anger,journal,synthetic
+73,Just the thought of my capstone project makes my chest feel tight all week.,anxiety,anxiety,fear,chat,synthetic
+74,"I feel really grateful since the deadline got moved up, especially after getting a scholarship.",positive,positive,joy,journal,synthetic
+75,"I don't say it enough, but I really love how my advisor always show up for me.",positive,love,love,journal,synthetic
+76,"I appreciate my cousin so much, they've been so supportive since the deadline got moved up.",positive,love,love,journal,synthetic
+77,"I feel so worthless since morning, like nothing I do matters to anyone.",crisis,crisis,sadness,chat,synthetic
+78,"Took some notes on my hackathon submission recently, nothing major to report.",neutral,neutral,neutral,chat,synthetic
+79,Never in a million years did I think getting a scholarship would happen today.,positive,surprise,surprise,chat,synthetic
+80,"a surprise call from an old friend happened completely out of the blue this month, still processing it.",positive,surprise,surprise,journal,synthetic
+81,"Nothing feels exciting anymore, over the weekend has just felt heavy because of a canceled plan I was looking forward to.",negative,negative,sadness,chat,synthetic
+82,"I feel so cared for by my sibling, especially recently.",positive,love,love,journal,synthetic
+83,"fixing a bug I was stuck on happened completely out of the blue this week, still processing it.",positive,surprise,surprise,journal,synthetic
+84,"I've been short-tempered with my advisor for a while now, losing track of time has me on edge.",anger,anger,anger,journal,synthetic
+85,I organized my schedule for the client demo today.,neutral,neutral,neutral,journal,synthetic
+86,Just finished going over notes for my part-time job.,neutral,neutral,neutral,journal,synthetic
+87,"I'm so frustrated with my internship, not sleeping well has completely thrown me off.",anger,anger,anger,chat,synthetic
+88,My stomach's been in knots since the results came out thinking about my internship.,anxiety,anxiety,fear,chat,synthetic
+89,Spending time with my parents this month reminded me how lucky I am to have them.,positive,love,love,journal,synthetic
+90,"I'm really thankful for my in-laws, they always know how to cheer me up.",positive,love,love,chat,synthetic
+91,It's infuriating how conflicting priorities keeps getting dismissed since yesterday.,anger,anger,anger,chat,synthetic
+92,I can't shake this uneasy feeling about my capstone project lately.,anxiety,anxiety,fear,chat,synthetic
+93,"I'm dreading my thesis, my heart races just thinking about it.",anxiety,anxiety,fear,chat,synthetic
+94,"Everything feels a bit gray this semester, ever since a heavy workload.",negative,negative,sadness,chat,synthetic
+95,"I feel so worked up over a missed deadline, it's hard to calm down since yesterday.",anger,anger,anger,chat,synthetic
+96,Rescheduled college assignments with my neighbors for later since yesterday.,neutral,neutral,neutral,chat,synthetic
+97,"I've been restless since the deadline got moved up, constant comparisons keeps replaying in my head.",anxiety,anxiety,fear,chat,synthetic
+98,"Wasn't expecting my coach to bring up placements since the deadline got moved up, took me by surprise.",positive,surprise,surprise,journal,synthetic
+99,"I feel trapped, like there's no way out of overthinking everything.",crisis,crisis,sadness,journal,synthetic
+100,Spending time with my landlord this month reminded me how lucky I am to have them.,positive,love,love,chat,synthetic
+101,Just the thought of my internship makes my chest feel tight since morning.,anxiety,anxiety,fear,journal,synthetic
+102,Just finished going over notes for my lab work.,neutral,neutral,neutral,chat,synthetic
+103,"I snapped at my roommate since yesterday, I've just been on edge because of a delayed response from someone important.",anger,anger,anger,chat,synthetic
+104,"I don't say it enough, but I really love how my manager always show up for me.",positive,love,love,chat,synthetic
+105,"I feel trapped, like there's no way out of unexpected extra work.",crisis,crisis,sadness,journal,synthetic
+106,"I'm really thankful for my sibling, they always know how to cheer me up.",positive,love,love,journal,synthetic
+107,"cooking a good meal happened completely out of the blue this month, still processing it.",positive,surprise,surprise,chat,synthetic
+108,"It's rare that I feel this good, but learning something new I'm excited about really did it all week.",positive,positive,joy,chat,synthetic
+109,Spending time with my neighbors for a while now reminded me how lucky I am to have them.,positive,love,love,journal,synthetic
+110,My stomach's been in knots since the results came out thinking about my capstone project.,anxiety,anxiety,fear,chat,synthetic
+111,Spent recently going through emails related to my viva.,neutral,neutral,neutral,chat,synthetic
+112,"I'm boiling over my thesis since the results came out, especially after family expectations.",anger,anger,anger,chat,synthetic
+113,Honestly shocked that not getting enough sleep turned out this way for a while now.,positive,surprise,surprise,chat,synthetic
+114,"I can't believe conflicting priorities, it's making me so angry for the past few days.",anger,anger,anger,journal,synthetic
+115,"I can't believe money problems, it's making me so angry lately.",anger,anger,anger,chat,synthetic
+116,"It's rare that I feel this good, but finishing a workout really did it these days.",positive,positive,joy,chat,synthetic
+117,"I keep tearing up randomly this semester, I think it's not sleeping well weighing on me.",negative,negative,sadness,journal,synthetic
+118,"Nothing feels exciting anymore, these days has just felt heavy because of constant comparisons.",negative,negative,sadness,chat,synthetic
+119,"I don't really feel like doing anything since yesterday, unexpected extra work has drained me.",negative,negative,sadness,chat,synthetic
+120,"I've been thinking a lot about just disappearing, I can't handle a missed deadline anymore.",crisis,crisis,sadness,journal,synthetic
+121,"I don't feel like myself anymore, I just feel numb to everything since last night.",crisis,crisis,sadness,chat,synthetic
+122,"I can't stop smiling after getting selected for the internship, best feeling ever.",positive,positive,joy,chat,synthetic
+123,I keep feeling disappointed in myself today because of miscommunication with my team.,negative,negative,sadness,journal,synthetic
+124,I have my coding assignment coming up and I can't stop worrying about it.,anxiety,anxiety,fear,journal,synthetic
+125,"I'm fed up with my portfolio lately, family expectations is the last straw.",anger,anger,anger,chat,synthetic
+126,over the weekend turned out amazing because of acing my exam.,positive,positive,joy,journal,synthetic
+127,"I feel trapped, like there's no way out of a missed deadline.",crisis,crisis,sadness,chat,synthetic
+128,"I've been thinking a lot about just disappearing, I can't handle a last-minute change of plans anymore.",crisis,crisis,sadness,chat,synthetic
+129,"I feel so cared for by my manager, especially since yesterday.",positive,love,love,chat,synthetic
+130,"my professor surprised me with their kindness this month, I feel really loved.",positive,love,love,journal,synthetic
+131,"I'm so frustrated with my portfolio, not sleeping well has completely thrown me off.",anger,anger,anger,journal,synthetic
+132,"I don't want to be here anymore, I'm just so tired of everything.",crisis,crisis,sadness,chat,synthetic
+133,recently turned out amazing because of finishing a workout.,positive,positive,joy,journal,synthetic
+134,The weather has been pretty average since last night.,neutral,neutral,neutral,chat,synthetic
+135,my mentor checked in on me recently and it meant a lot.,positive,love,love,chat,synthetic
+136,"I'm really annoyed, unfair feedback keeps happening and nobody seems to care.",anger,anger,anger,journal,synthetic
+137,"Nothing feels exciting anymore, this month has just felt heavy because of a low grade.",negative,negative,sadness,journal,synthetic
+138,"Everything feels a bit gray this semester, ever since money problems.",negative,negative,sadness,chat,synthetic
+139,"I don't think I can keep going like this, it's all too much for the past few days.",crisis,crisis,sadness,journal,synthetic
+140,I keep feeling disappointed in myself for a while now because of overthinking everything.,negative,negative,sadness,chat,synthetic
+141,"Wasn't expecting my roommate to bring up my scholarship application this month, took me by surprise.",positive,surprise,surprise,chat,synthetic
+142,"I'm so frustrated with my part-time job, a missed deadline has completely thrown me off.",anger,anger,anger,journal,synthetic
+143,Sent an update about my driving test to my manager these days.,neutral,neutral,neutral,chat,synthetic
+144,Just the thought of my group project makes my chest feel tight this month.,anxiety,anxiety,fear,journal,synthetic
+145,"I don't think I can keep going like this, it's all too much these days.",crisis,crisis,sadness,journal,synthetic
+146,I've been overthinking the client demo for the past few days and it's making it hard to sleep.,anxiety,anxiety,fear,journal,synthetic
+147,"I did not expect a surprise call from an old friend, caught me completely off guard.",positive,surprise,surprise,journal,synthetic
+148,"Everything about the semester is irritating me this month, especially a missed deadline.",anger,anger,anger,chat,synthetic
+149,"I feel like such a burden to my in-laws, everyone would be better off without me.",crisis,crisis,sadness,chat,synthetic
+150,"I feel completely hopeless this whole term, like nothing is ever going to get better.",crisis,crisis,sadness,journal,synthetic
+151,Spent for the past few days going through emails related to the sprint deadline.,neutral,neutral,neutral,journal,synthetic
+152,Didn't see that coming — finally understanding a tough concept out of nowhere over the weekend.,positive,surprise,surprise,journal,synthetic
+153,"I've been short-tempered with my manager today, losing track of time has me on edge.",anger,anger,anger,chat,synthetic
+154,"I feel so worked up over a low grade, it's hard to calm down all afternoon.",anger,anger,anger,journal,synthetic
+155,"Everything feels a bit gray these days, ever since a delayed response from someone important.",negative,negative,sadness,chat,synthetic
+156,Didn't see that coming — finishing all my pending tasks out of nowhere recently.,positive,surprise,surprise,chat,synthetic
+157,"I've been thinking a lot about just disappearing, I can't handle money problems anymore.",crisis,crisis,sadness,chat,synthetic
+158,"Everything about my presentation is irritating me since yesterday, especially getting rejected from an internship.",anger,anger,anger,journal,synthetic
+159,"I did not expect wrapping up a big project, caught me completely off guard.",positive,surprise,surprise,chat,synthetic
+160,I was genuinely stunned today when a long walk with a friend happened.,positive,surprise,surprise,journal,synthetic
+161,"I don't say it enough, but I really love how my team always show up for me.",positive,love,love,chat,synthetic
+162,Honestly shocked that family expectations turned out this way this whole term.,positive,surprise,surprise,journal,synthetic
+163,Never in a million years did I think finishing a workout would happen this week.,positive,surprise,surprise,journal,synthetic
+164,"I feel kind of empty this month, overthinking everything has been really hard to deal with.",negative,negative,sadness,chat,synthetic
+165,Honestly since the deadline got moved up has been great — finishing all my pending tasks and I feel proud of myself.,positive,positive,joy,journal,synthetic
+166,"I've been thinking a lot about just disappearing, I can't handle miscommunication with my team anymore.",crisis,crisis,sadness,journal,synthetic
+167,"I feel kind of empty recently, a broken laptop right before a deadline has been really hard to deal with.",negative,negative,sadness,chat,synthetic
+168,"I feel so worthless this whole term, like nothing I do matters to anyone.",crisis,crisis,sadness,chat,synthetic
+169,"I'm boiling over the sprint deadline over the weekend, especially after unexpected extra work.",anger,anger,anger,journal,synthetic
+170,"I feel so cared for by my partner, especially since the results came out.",positive,love,love,chat,synthetic
+171,Met with my sibling to discuss my scholarship application today.,neutral,neutral,neutral,journal,synthetic
+172,"Nothing feels exciting anymore, this month has just felt heavy because of conflicting priorities.",negative,negative,sadness,chat,synthetic
+173,I can't focus on anything else because I'm so worried about an argument at home.,anxiety,anxiety,fear,chat,synthetic
+174,Spent this whole term going through emails related to my group project.,neutral,neutral,neutral,journal,synthetic
+175,"I've just felt off today, overthinking everything has been sitting heavy on my mind.",negative,negative,sadness,journal,synthetic
+176,I've been overthinking my lab work since morning and it's making it hard to sleep.,anxiety,anxiety,fear,chat,synthetic
+177,"I did not expect getting a good night's sleep, caught me completely off guard.",positive,surprise,surprise,journal,synthetic
+178,"I feel trapped, like there's no way out of not getting enough sleep.",crisis,crisis,sadness,chat,synthetic
+179,"I've been isolating myself over the weekend, a fight with a friend just left me feeling down.",negative,negative,sadness,chat,synthetic
+180,"I've been isolating myself since morning, family expectations just left me feeling down.",negative,negative,sadness,chat,synthetic
+181,I organized my schedule for my thesis defense recently.,neutral,neutral,neutral,journal,synthetic
+182,Met with my advisor to discuss my thesis defense these days.,neutral,neutral,neutral,journal,synthetic
+183,Updated my calendar for my internship all afternoon.,neutral,neutral,neutral,journal,synthetic
+184,"I don't think I can keep going like this, it's all too much since last night.",crisis,crisis,sadness,chat,synthetic
+185,"It's rare that I feel this good, but a long walk with a friend really did it today.",positive,positive,joy,chat,synthetic
+186,"I did not expect a long walk with a friend, caught me completely off guard.",positive,surprise,surprise,chat,synthetic
+187,"I don't really feel like doing anything this week, a fight with a friend has drained me.",negative,negative,sadness,journal,synthetic
+188,"I've lost motivation for my internship this month, unfair feedback really got to me.",negative,negative,sadness,journal,synthetic
+189,My stomach's been in knots over the weekend thinking about my portfolio.,anxiety,anxiety,fear,chat,synthetic
+190,"Everything feels a bit gray lately, ever since money problems.",negative,negative,sadness,chat,synthetic
+191,"Everything about my thesis defense is irritating me over the weekend, especially a heavy workload.",anger,anger,anger,chat,synthetic
+192,"my classmates surprised me with their kindness for a while now, I feel really loved.",positive,love,love,journal,synthetic
+193,"I feel kind of empty these days, a missed deadline has been really hard to deal with.",negative,negative,sadness,journal,synthetic
+194,Honestly for the past few days has been great — finally understanding a tough concept and I feel proud of myself.,positive,positive,joy,journal,synthetic
+195,"I'm boiling over my dissertation defense since the deadline got moved up, especially after losing my train of thought during a presentation.",anger,anger,anger,chat,synthetic
+196,"Took some notes on my group project since yesterday, nothing major to report.",neutral,neutral,neutral,chat,synthetic
+197,"I snapped at my coach this week, I've just been on edge because of family expectations.",anger,anger,anger,journal,synthetic
+198,I can't shake this uneasy feeling about my hackathon submission lately.,anxiety,anxiety,fear,chat,synthetic
+199,Didn't see that coming — acing my exam out of nowhere since the deadline got moved up.,positive,surprise,surprise,chat,synthetic
+200,"I'm really annoyed, conflicting priorities keeps happening and nobody seems to care.",anger,anger,anger,journal,synthetic
+201,"I did not expect learning something new I'm excited about, caught me completely off guard.",positive,surprise,surprise,journal,synthetic
+202,Spent since the results came out going through emails related to my hackathon submission.,neutral,neutral,neutral,chat,synthetic
+203,Spending time with my cousin for a while now reminded me how lucky I am to have them.,positive,love,love,journal,synthetic
+204,"I appreciate my neighbors so much, they've been so supportive lately.",positive,love,love,chat,synthetic
+205,Met with my coach to discuss my apprenticeship recently.,neutral,neutral,neutral,chat,synthetic
+206,Just the thought of my certification exam makes my chest feel tight since last night.,anxiety,anxiety,fear,journal,synthetic
+207,I can't focus on anything else because I'm so worried about losing track of time.,anxiety,anxiety,fear,journal,synthetic
+208,"I feel like such a burden to my classmates, everyone would be better off without me.",crisis,crisis,sadness,journal,synthetic
+209,"It's been a rough patch because of an argument at home, I just feel sad most of the time.",negative,negative,sadness,journal,synthetic
+210,Reviewed the checklist for my dissertation defense since last night.,neutral,neutral,neutral,journal,synthetic
+211,Updated my calendar for my hackathon submission these days.,neutral,neutral,neutral,journal,synthetic
+212,"I don't think I can keep going like this, it's all too much this semester.",crisis,crisis,sadness,journal,synthetic
+213,Spending time with my professor since yesterday reminded me how lucky I am to have them.,positive,love,love,chat,synthetic
+214,I was genuinely stunned since yesterday when getting selected for the internship happened.,positive,surprise,surprise,journal,synthetic
+215,"Took some notes on my certification exam today, nothing major to report.",neutral,neutral,neutral,journal,synthetic
+216,I have the sprint deadline coming up and I can't stop worrying about it.,anxiety,anxiety,fear,chat,synthetic
+217,"I'm fed up with my part-time job for the past few days, a low grade is the last straw.",anger,anger,anger,journal,synthetic
+218,I can't focus on anything else because I'm so worried about a last-minute change of plans.,anxiety,anxiety,fear,chat,synthetic
+219,Didn't see that coming — getting my certificate out of nowhere since the deadline got moved up.,positive,surprise,surprise,chat,synthetic
+220,Updated my calendar for my certification exam over the weekend.,neutral,neutral,neutral,chat,synthetic
+221,"I feel really discouraged lately, a heavy workload keeps pulling me down.",negative,negative,sadness,journal,synthetic
+222,"My mind won't stop racing about my research paper, I feel really anxious these days.",anxiety,anxiety,fear,journal,synthetic
+223,Met with my coach to discuss my thesis defense this week.,neutral,neutral,neutral,chat,synthetic
+224,Sent an update about the semester to my parents over the weekend.,neutral,neutral,neutral,chat,synthetic
+225,Planning to start working on my internship tomorrow.,neutral,neutral,neutral,chat,synthetic
+226,Spent recently going through emails related to my lab work.,neutral,neutral,neutral,chat,synthetic
+227,I have my final year project coming up and I can't stop worrying about it.,anxiety,anxiety,fear,journal,synthetic
+228,I nearly dropped my phone when I heard about acing my exam since the deadline got moved up.,positive,surprise,surprise,chat,synthetic
+229,"I'm in such a good mood for a while now, acing my exam really lifted my spirits.",positive,positive,joy,journal,synthetic
+230,I keep feeling disappointed in myself today because of a delayed response from someone important.,negative,negative,sadness,journal,synthetic
+231,"I've been thinking a lot about just disappearing, I can't handle a delayed response from someone important anymore.",crisis,crisis,sadness,journal,synthetic
+232,"I feel so worthless since the results came out, like nothing I do matters to anyone.",crisis,crisis,sadness,chat,synthetic
+233,"I keep replaying wrapping up a big project in my head, it made since the deadline got moved up so much better.",positive,positive,joy,journal,synthetic
+234,I nearly dropped my phone when I heard about clearing a tough interview today.,positive,surprise,surprise,chat,synthetic
+235,I keep thinking that things would be easier if I just wasn't around.,crisis,crisis,sadness,chat,synthetic
+236,"I don't think I can keep going like this, it's all too much this whole term.",crisis,crisis,sadness,chat,synthetic
+237,I can't shake this uneasy feeling about my viva this week.,anxiety,anxiety,fear,journal,synthetic
+238,"Just wanted to share that spending time with my family, I'm on top of the world right now.",positive,positive,joy,journal,synthetic
+239,"Took some notes on my hackathon submission since yesterday, nothing major to report.",neutral,neutral,neutral,chat,synthetic
+240,"I feel completely hopeless since last night, like nothing is ever going to get better.",crisis,crisis,sadness,chat,synthetic
+241,"I feel so cared for by my advisor, especially since last night.",positive,love,love,journal,synthetic
+242,Honestly shocked that losing my train of thought during a presentation turned out this way over the weekend.,positive,surprise,surprise,chat,synthetic
+243,"I did not expect finishing my project early, caught me completely off guard.",positive,surprise,surprise,journal,synthetic
+244,"I feel really grateful since last night, especially after a surprise call from an old friend.",positive,positive,joy,journal,synthetic
+245,"I feel so cared for by my professor, especially over the weekend.",positive,love,love,journal,synthetic
+246,I have the client demo scheduled for later all afternoon.,neutral,neutral,neutral,chat,synthetic
+247,"I've been isolating myself since last night, conflicting priorities just left me feeling down.",negative,negative,sadness,chat,synthetic
+248,"finishing a workout happened completely out of the blue all week, still processing it.",positive,surprise,surprise,chat,synthetic
+249,a broken laptop right before a deadline again? I'm honestly losing my patience since morning.,anger,anger,anger,journal,synthetic
+250,"I appreciate my coach so much, they've been so supportive since morning.",positive,love,love,journal,synthetic
+251,"I've lost motivation for the client demo since last night, a low grade really got to me.",negative,negative,sadness,journal,synthetic
+252,"I'm so happy about finishing my project early, it really made my lately.",positive,positive,joy,chat,synthetic
+253,I was genuinely stunned these days when finishing all my pending tasks happened.,positive,surprise,surprise,chat,synthetic
+254,"I've been thinking a lot about just disappearing, I can't handle overthinking everything anymore.",crisis,crisis,sadness,chat,synthetic
+255,"It's rare that I feel this good, but spending time with my family really did it recently.",positive,positive,joy,chat,synthetic
+256,"I snapped at my advisor since yesterday, I've just been on edge because of miscommunication with my team.",anger,anger,anger,journal,synthetic
+257,Spending time with my partner since last night reminded me how lucky I am to have them.,positive,love,love,journal,synthetic
+258,"I feel completely hopeless for a while now, like nothing is ever going to get better.",crisis,crisis,sadness,chat,synthetic
+259,"I can't believe losing track of time, it's making me so angry for a while now.",anger,anger,anger,chat,synthetic
+260,"I keep replaying getting a good night's sleep in my head, it made recently so much better.",positive,positive,joy,journal,synthetic
+261,"I feel kind of empty all week, unfair feedback has been really hard to deal with.",negative,negative,sadness,chat,synthetic
+262,Honestly shocked that conflicting priorities turned out this way today.,positive,surprise,surprise,chat,synthetic
+263,"my professor surprised me with their kindness all week, I feel really loved.",positive,love,love,journal,synthetic
+264,Never in a million years did I think a long walk with a friend would happen all afternoon.,positive,surprise,surprise,journal,synthetic
+265,"I've lost motivation for my thesis since morning, a missed deadline really got to me.",negative,negative,sadness,journal,synthetic
+266,"I feel so worthless recently, like nothing I do matters to anyone.",crisis,crisis,sadness,journal,synthetic
+267,I keep imagining worst-case scenarios about college assignments this week.,anxiety,anxiety,fear,chat,synthetic
+268,"I don't really feel like doing anything this month, losing my train of thought during a presentation has drained me.",negative,negative,sadness,chat,synthetic
+269,Just the thought of my capstone project makes my chest feel tight since the deadline got moved up.,anxiety,anxiety,fear,journal,synthetic
+270,"I'm boiling over the client demo since morning, especially after losing track of time.",anger,anger,anger,journal,synthetic
+271,My stomach's been in knots all afternoon thinking about the client demo.,anxiety,anxiety,fear,chat,synthetic
+272,Rescheduled the sprint deadline with my professor for later for a while now.,neutral,neutral,neutral,journal,synthetic
+273,Honestly shocked that family expectations turned out this way since the deadline got moved up.,positive,surprise,surprise,chat,synthetic
+274,Never in a million years did I think getting selected for the internship would happen since last night.,positive,surprise,surprise,chat,synthetic
+275,I can't shake this uneasy feeling about my scholarship application for the past few days.,anxiety,anxiety,fear,journal,synthetic
+276,my parents checked in on me this whole term and it meant a lot.,positive,love,love,chat,synthetic
+277,"My mind won't stop racing about my presentation, I feel really anxious since last night.",anxiety,anxiety,fear,chat,synthetic
+278,"Took some notes on my thesis over the weekend, nothing major to report.",neutral,neutral,neutral,chat,synthetic
+279,Just the thought of my hackathon submission makes my chest feel tight all week.,anxiety,anxiety,fear,chat,synthetic
+280,"I snapped at my cousin for a while now, I've just been on edge because of constant comparisons.",anger,anger,anger,chat,synthetic
+281,"I feel completely hopeless since the deadline got moved up, like nothing is ever going to get better.",crisis,crisis,sadness,journal,synthetic
+282,Spending time with my neighbors lately reminded me how lucky I am to have them.,positive,love,love,journal,synthetic
+283,"I've been isolating myself this month, unexpected extra work just left me feeling down.",negative,negative,sadness,journal,synthetic
+284,I have my portfolio coming up and I can't stop worrying about it.,anxiety,anxiety,fear,journal,synthetic
+285,"I've been restless this week, a low grade keeps replaying in my head.",anxiety,anxiety,fear,chat,synthetic
+286,"I keep tearing up randomly all afternoon, I think it's a missed deadline weighing on me.",negative,negative,sadness,chat,synthetic
+287,"I don't feel like myself anymore, I just feel numb to everything lately.",crisis,crisis,sadness,journal,synthetic
+288,I can't shake this uneasy feeling about my lab work this month.,anxiety,anxiety,fear,chat,synthetic
+289,"I feel like such a burden to my landlord, everyone would be better off without me.",crisis,crisis,sadness,journal,synthetic
+290,"I feel really grateful this whole term, especially after getting selected for the internship.",positive,positive,joy,journal,synthetic
+291,for a while now turned out amazing because of finishing all my pending tasks.,positive,positive,joy,chat,synthetic
+292,"I'm genuinely excited lately, spending time with my family made everything feel worth it.",positive,positive,joy,chat,synthetic
+293,"I feel really grateful over the weekend, especially after getting positive feedback from my mentor.",positive,positive,joy,chat,synthetic
+294,"I'm so frustrated with my scholarship application, a heavy workload has completely thrown me off.",anger,anger,anger,chat,synthetic
+295,"I keep tearing up randomly for a while now, I think it's an unclear set of instructions weighing on me.",negative,negative,sadness,journal,synthetic
+296,since morning turned out amazing because of a surprise call from an old friend.,positive,positive,joy,chat,synthetic
+297,"I've been isolating myself since last night, not getting enough sleep just left me feeling down.",negative,negative,sadness,journal,synthetic
+298,Updated my calendar for my certification exam since morning.,neutral,neutral,neutral,journal,synthetic
+299,"I feel completely hopeless lately, like nothing is ever going to get better.",crisis,crisis,sadness,chat,synthetic
+300,I have college assignments coming up and I can't stop worrying about it.,anxiety,anxiety,fear,journal,synthetic
+301,"I'm really thankful for my colleagues, they always know how to cheer me up.",positive,love,love,chat,synthetic
+302,Met with my coach to discuss my lab work all afternoon.,neutral,neutral,neutral,journal,synthetic
+303,I keep feeling disappointed in myself since the deadline got moved up because of a last-minute change of plans.,negative,negative,sadness,journal,synthetic
+304,I've been overthinking my presentation since morning and it's making it hard to sleep.,anxiety,anxiety,fear,chat,synthetic
+305,I keep imagining worst-case scenarios about the sprint deadline this month.,anxiety,anxiety,fear,chat,synthetic
+306,Just finished going over notes for my thesis.,neutral,neutral,neutral,chat,synthetic
+307,Reviewed the checklist for my lab work since the results came out.,neutral,neutral,neutral,chat,synthetic
+308,Planning to start working on the semester tomorrow.,neutral,neutral,neutral,journal,synthetic
+309,"I feel really discouraged this semester, a broken laptop right before a deadline keeps pulling me down.",negative,negative,sadness,journal,synthetic
+310,"I feel really grateful for a while now, especially after spending time with my family.",positive,positive,joy,chat,synthetic
+311,"I keep tearing up randomly recently, I think it's an unclear set of instructions weighing on me.",negative,negative,sadness,chat,synthetic
+312,Rescheduled my performance review with my best friend for later all week.,neutral,neutral,neutral,chat,synthetic
+313,I nearly dropped my phone when I heard about finishing my project early since yesterday.,positive,surprise,surprise,journal,synthetic
+314,Just the thought of the client demo makes my chest feel tight since the deadline got moved up.,anxiety,anxiety,fear,chat,synthetic
+315,"Everything feels a bit gray lately, ever since losing track of time.",negative,negative,sadness,chat,synthetic
+316,"I feel like such a burden to my partner, everyone would be better off without me.",crisis,crisis,sadness,chat,synthetic
+317,Updated my calendar for my scholarship application all week.,neutral,neutral,neutral,journal,synthetic
+318,"I feel really nervous about my viva, what if I mess it up?",anxiety,anxiety,fear,chat,synthetic
+319,Spending time with my in-laws lately reminded me how lucky I am to have them.,positive,love,love,journal,synthetic
+320,"I keep replaying cooking a good meal in my head, it made this week so much better.",positive,positive,joy,chat,synthetic
+321,Sent an update about my capstone project to my sibling these days.,neutral,neutral,neutral,journal,synthetic
+322,"I feel completely hopeless this month, like nothing is ever going to get better.",crisis,crisis,sadness,chat,synthetic
+323,"I'm dreading my scholarship application, my heart races just thinking about it.",anxiety,anxiety,fear,journal,synthetic
+324,"I'm genuinely excited this whole term, cooking a good meal made everything feel worth it.",positive,positive,joy,chat,synthetic
+325,"I'm really annoyed, losing my train of thought during a presentation keeps happening and nobody seems to care.",anger,anger,anger,journal,synthetic
+326,"Took some notes on my scholarship application since morning, nothing major to report.",neutral,neutral,neutral,chat,synthetic
+327,"I feel really discouraged this whole term, family expectations keeps pulling me down.",negative,negative,sadness,chat,synthetic
+328,"I don't feel like myself anymore, I just feel numb to everything since morning.",crisis,crisis,sadness,chat,synthetic
+329,"I feel trapped, like there's no way out of a low grade.",crisis,crisis,sadness,chat,synthetic
+330,Didn't see that coming — clearing a tough interview out of nowhere this month.,positive,surprise,surprise,journal,synthetic
+331,"I did not expect getting appreciated in front of my team, caught me completely off guard.",positive,surprise,surprise,chat,synthetic
+332,Feeling really accomplished since the results came out after acing my exam.,positive,positive,joy,journal,synthetic
+333,"my mentor surprised me with their kindness for the past few days, I feel really loved.",positive,love,love,chat,synthetic
+334,Never in a million years did I think getting appreciated in front of my team would happen today.,positive,surprise,surprise,chat,synthetic
+335,"I snapped at my group members all afternoon, I've just been on edge because of a missed deadline.",anger,anger,anger,journal,synthetic
+336,"I'm boiling over my performance review since morning, especially after a canceled plan I was looking forward to.",anger,anger,anger,chat,synthetic
+337,I keep imagining worst-case scenarios about placements for the past few days.,anxiety,anxiety,fear,journal,synthetic
+338,Honestly since yesterday has been great — getting my certificate and I feel proud of myself.,positive,positive,joy,journal,synthetic
+339,"I've been isolating myself since last night, uncertainty about the future just left me feeling down.",negative,negative,sadness,journal,synthetic
+340,"I don't feel like myself anymore, I just feel numb to everything this week.",crisis,crisis,sadness,journal,synthetic
+341,"My mind won't stop racing about my apprenticeship, I feel really anxious this semester.",anxiety,anxiety,fear,chat,synthetic
+342,"I keep replaying getting a scholarship in my head, it made recently so much better.",positive,positive,joy,journal,synthetic
+343,"I keep tearing up randomly since yesterday, I think it's a heavy workload weighing on me.",negative,negative,sadness,journal,synthetic
+344,"I snapped at my neighbors all week, I've just been on edge because of losing track of time.",anger,anger,anger,journal,synthetic
+345,"I feel completely hopeless all week, like nothing is ever going to get better.",crisis,crisis,sadness,journal,synthetic
+346,"I feel so worthless for the past few days, like nothing I do matters to anyone.",crisis,crisis,sadness,journal,synthetic
+347,Grateful doesn't even cover how I feel about my in-laws this week.,positive,love,love,chat,synthetic
+348,"I feel so cared for by my group members, especially this month.",positive,love,love,chat,synthetic
+349,"I'm in such a good mood since yesterday, wrapping up a big project really lifted my spirits.",positive,positive,joy,chat,synthetic
+350,"I appreciate my roommate so much, they've been so supportive since the results came out.",positive,love,love,journal,synthetic
+351,Met with my team to discuss my final year project since the results came out.,neutral,neutral,neutral,chat,synthetic
+352,"fixing a bug I was stuck on happened completely out of the blue lately, still processing it.",positive,surprise,surprise,journal,synthetic
+353,my colleagues checked in on me since morning and it meant a lot.,positive,love,love,chat,synthetic
+354,"Everything about my apprenticeship is irritating me this week, especially getting rejected from an internship.",anger,anger,anger,chat,synthetic
+355,"I've been isolating myself since yesterday, family expectations just left me feeling down.",negative,negative,sadness,chat,synthetic
+356,"I don't really feel like doing anything since the results came out, a heavy workload has drained me.",negative,negative,sadness,journal,synthetic
+357,"I feel really discouraged since yesterday, not sleeping well keeps pulling me down.",negative,negative,sadness,chat,synthetic
+358,"I've been short-tempered with my landlord lately, conflicting priorities has me on edge.",anger,anger,anger,journal,synthetic
+359,Met with my coach to discuss my research paper for the past few days.,neutral,neutral,neutral,journal,synthetic
+360,"Everything about my dissertation defense is irritating me since morning, especially a missed deadline.",anger,anger,anger,chat,synthetic
+361,I nearly dropped my phone when I heard about wrapping up a big project since the deadline got moved up.,positive,surprise,surprise,chat,synthetic
+362,"I can't believe overthinking everything, it's making me so angry since yesterday.",anger,anger,anger,journal,synthetic
+363,"learning something new I'm excited about happened completely out of the blue since last night, still processing it.",positive,surprise,surprise,journal,synthetic
+364,Reviewed the checklist for college assignments this month.,neutral,neutral,neutral,journal,synthetic
+365,"I don't think I can keep going like this, it's all too much since morning.",crisis,crisis,sadness,chat,synthetic
+366,"Everything feels a bit gray all week, ever since a broken laptop right before a deadline.",negative,negative,sadness,chat,synthetic
+367,"I don't say it enough, but I really love how my roommate always show up for me.",positive,love,love,chat,synthetic
+368,"I feel completely hopeless since yesterday, like nothing is ever going to get better.",crisis,crisis,sadness,chat,synthetic
+369,"I'm dreading my lab work, my heart races just thinking about it.",anxiety,anxiety,fear,journal,synthetic
+370,"I've been thinking a lot about just disappearing, I can't handle an argument at home anymore.",crisis,crisis,sadness,chat,synthetic
+371,Spending time with my professor all afternoon reminded me how lucky I am to have them.,positive,love,love,journal,synthetic
+372,"I feel like such a burden to my cousin, everyone would be better off without me.",crisis,crisis,sadness,chat,synthetic
+373,"learning something new I'm excited about happened completely out of the blue since the deadline got moved up, still processing it.",positive,surprise,surprise,journal,synthetic
+374,"I don't say it enough, but I really love how my in-laws always show up for me.",positive,love,love,journal,synthetic
+375,"my classmates surprised me with their kindness all afternoon, I feel really loved.",positive,love,love,chat,synthetic
+376,"cooking a good meal happened completely out of the blue since the deadline got moved up, still processing it.",positive,surprise,surprise,chat,synthetic
+377,"I'm dreading my apprenticeship, my heart races just thinking about it.",anxiety,anxiety,fear,journal,synthetic
+378,"I keep tearing up randomly since last night, I think it's constant comparisons weighing on me.",negative,negative,sadness,journal,synthetic
+379,"I've been short-tempered with my classmates lately, a low grade has me on edge.",anger,anger,anger,chat,synthetic
+380,Just finished going over notes for my portfolio.,neutral,neutral,neutral,journal,synthetic
+381,"Everything feels a bit gray this semester, ever since uncertainty about the future.",negative,negative,sadness,chat,synthetic
+382,"getting positive feedback from my mentor happened completely out of the blue for a while now, still processing it.",positive,surprise,surprise,journal,synthetic
+383,I was genuinely stunned lately when learning something new I'm excited about happened.,positive,surprise,surprise,chat,synthetic
+384,My stomach's been in knots all afternoon thinking about my certification exam.,anxiety,anxiety,fear,chat,synthetic
+385,Just the thought of placements makes my chest feel tight these days.,anxiety,anxiety,fear,chat,synthetic
+386,I organized my schedule for my part-time job since the results came out.,neutral,neutral,neutral,journal,synthetic
+387,"I'm really thankful for my best friend, they always know how to cheer me up.",positive,love,love,journal,synthetic
+388,"I feel trapped, like there's no way out of a last-minute change of plans.",crisis,crisis,sadness,chat,synthetic
+389,"I don't think I can keep going like this, it's all too much all afternoon.",crisis,crisis,sadness,journal,synthetic
+390,"I've been isolating myself lately, family expectations just left me feeling down.",negative,negative,sadness,journal,synthetic
+391,Feeling really accomplished since morning after getting my certificate.,positive,positive,joy,chat,synthetic
+392,"my team surprised me with their kindness for a while now, I feel really loved.",positive,love,love,journal,synthetic
+393,recently turned out amazing because of learning something new I'm excited about.,positive,positive,joy,journal,synthetic
+394,"I've been short-tempered with my neighbors this whole term, uncertainty about the future has me on edge.",anger,anger,anger,chat,synthetic
+395,"I don't feel like myself anymore, I just feel numb to everything since the deadline got moved up.",crisis,crisis,sadness,journal,synthetic
+396,"I feel so cared for by my coach, especially for a while now.",positive,love,love,chat,synthetic
+397,"Just wanted to share that finishing all my pending tasks, I'm on top of the world right now.",positive,positive,joy,chat,synthetic
+398,"Just wanted to share that getting appreciated in front of my team, I'm on top of the world right now.",positive,positive,joy,chat,synthetic
+399,"I'm genuinely excited today, learning something new I'm excited about made everything feel worth it.",positive,positive,joy,journal,synthetic
+400,"I'm in such a good mood this month, finishing my project early really lifted my spirits.",positive,positive,joy,journal,synthetic
+401,Grateful doesn't even cover how I feel about my team over the weekend.,positive,love,love,chat,synthetic
+402,"I keep replaying a long walk with a friend in my head, it made since the results came out so much better.",positive,positive,joy,journal,synthetic
+403,"I don't feel like myself anymore, I just feel numb to everything for a while now.",crisis,crisis,sadness,chat,synthetic
+404,"I don't think I can keep going like this, it's all too much today.",crisis,crisis,sadness,journal,synthetic
+405,"I'm boiling over my capstone project since morning, especially after a delayed response from someone important.",anger,anger,anger,chat,synthetic
+406,Updated my calendar for placements all week.,neutral,neutral,neutral,chat,synthetic
+407,"I feel really nervous about my scholarship application, what if I mess it up?",anxiety,anxiety,fear,journal,synthetic
+408,"I don't think I can keep going like this, it's all too much over the weekend.",crisis,crisis,sadness,journal,synthetic
+409,Grateful doesn't even cover how I feel about my best friend this month.,positive,love,love,chat,synthetic
+410,since last night turned out amazing because of finishing my project early.,positive,positive,joy,chat,synthetic
+411,"I can't believe unfair feedback, it's making me so angry since last night.",anger,anger,anger,chat,synthetic
+412,"my mentor surprised me with their kindness all afternoon, I feel really loved.",positive,love,love,journal,synthetic
+413,"I'm genuinely excited all afternoon, finishing all my pending tasks made everything feel worth it.",positive,positive,joy,journal,synthetic
+414,"fixing a bug I was stuck on happened completely out of the blue since morning, still processing it.",positive,surprise,surprise,chat,synthetic
+415,It's infuriating how constant comparisons keeps getting dismissed for the past few days.,anger,anger,anger,journal,synthetic
+416,Reviewed the checklist for the sprint deadline this whole term.,neutral,neutral,neutral,chat,synthetic
+417,"my colleagues surprised me with their kindness this month, I feel really loved.",positive,love,love,journal,synthetic
+418,my colleagues checked in on me for the past few days and it meant a lot.,positive,love,love,journal,synthetic
+419,"I appreciate my colleagues so much, they've been so supportive this week.",positive,love,love,chat,synthetic
+420,"It's been a rough patch because of money problems, I just feel sad most of the time.",negative,negative,sadness,chat,synthetic
+421,I have my viva scheduled for later lately.,neutral,neutral,neutral,chat,synthetic
+422,"I did not expect finishing all my pending tasks, caught me completely off guard.",positive,surprise,surprise,chat,synthetic
+423,Grateful doesn't even cover how I feel about my colleagues this month.,positive,love,love,chat,synthetic
+424,my advisor checked in on me since last night and it meant a lot.,positive,love,love,chat,synthetic
+425,"Wasn't expecting my parents to bring up my coding assignment this whole term, took me by surprise.",positive,surprise,surprise,chat,synthetic
+426,Grateful doesn't even cover how I feel about my parents for a while now.,positive,love,love,journal,synthetic
+427,"I feel completely hopeless all afternoon, like nothing is ever going to get better.",crisis,crisis,sadness,journal,synthetic
+428,"I feel so worthless all afternoon, like nothing I do matters to anyone.",crisis,crisis,sadness,chat,synthetic
+429,"I'm dreading my certification exam, my heart races just thinking about it.",anxiety,anxiety,fear,journal,synthetic
+430,"I've been thinking a lot about just disappearing, I can't handle getting rejected from an internship anymore.",crisis,crisis,sadness,journal,synthetic
+431,I nearly dropped my phone when I heard about getting my certificate this semester.,positive,surprise,surprise,journal,synthetic
+432,"My mind won't stop racing about my group project, I feel really anxious over the weekend.",anxiety,anxiety,fear,chat,synthetic
+433,"I'm fed up with my final year project for the past few days, conflicting priorities is the last straw.",anger,anger,anger,chat,synthetic
+434,I keep imagining worst-case scenarios about the semester this month.,anxiety,anxiety,fear,chat,synthetic
+435,"I've been restless all week, not getting enough sleep keeps replaying in my head.",anxiety,anxiety,fear,journal,synthetic
+436,I can't focus on anything else because I'm so worried about a delayed response from someone important.,anxiety,anxiety,fear,journal,synthetic
+437,"I'm really thankful for my team, they always know how to cheer me up.",positive,love,love,journal,synthetic
+438,Spending time with my professor for the past few days reminded me how lucky I am to have them.,positive,love,love,journal,synthetic
+439,"I've been short-tempered with my group members since morning, overthinking everything has me on edge.",anger,anger,anger,chat,synthetic
+440,"I snapped at my mentor over the weekend, I've just been on edge because of not getting enough sleep.",anger,anger,anger,journal,synthetic
+441,"I can't stop smiling after getting my certificate, best feeling ever.",positive,positive,joy,chat,synthetic
+442,I nearly dropped my phone when I heard about finishing my project early recently.,positive,surprise,surprise,chat,synthetic
+443,"I've lost motivation for my thesis defense since the deadline got moved up, a delayed response from someone important really got to me.",negative,negative,sadness,chat,synthetic
+444,"I feel so worthless this week, like nothing I do matters to anyone.",crisis,crisis,sadness,journal,synthetic
+445,Never in a million years did I think a long walk with a friend would happen these days.,positive,surprise,surprise,journal,synthetic
+446,Rescheduled my viva with my partner for later for a while now.,neutral,neutral,neutral,journal,synthetic
+447,"I'm in such a good mood for a while now, finishing all my pending tasks really lifted my spirits.",positive,positive,joy,chat,synthetic
+448,"I don't really feel like doing anything this week, conflicting priorities has drained me.",negative,negative,sadness,chat,synthetic
+449,Just the thought of exams makes my chest feel tight this semester.,anxiety,anxiety,fear,chat,synthetic
+450,"I feel completely hopeless today, like nothing is ever going to get better.",crisis,crisis,sadness,chat,synthetic
+451,Grateful doesn't even cover how I feel about my in-laws this semester.,positive,love,love,journal,synthetic
+452,"I feel really grateful this month, especially after learning something new I'm excited about.",positive,positive,joy,chat,synthetic
+453,"I don't think I can keep going like this, it's all too much lately.",crisis,crisis,sadness,journal,synthetic
+454,"Things are finally going well with my performance review, feeling optimistic about it.",positive,positive,joy,chat,synthetic
+455,"I can't believe a broken laptop right before a deadline, it's making me so angry this semester.",anger,anger,anger,chat,synthetic
+456,I organized my schedule for my capstone project since the results came out.,neutral,neutral,neutral,chat,synthetic
+457,"I'm dreading placements, my heart races just thinking about it.",anxiety,anxiety,fear,journal,synthetic
+458,"I feel really grateful recently, especially after getting a scholarship.",positive,positive,joy,journal,synthetic
+459,"Things are finally going well with my driving test, feeling optimistic about it.",positive,positive,joy,chat,synthetic
+460,"I'm genuinely excited over the weekend, finishing all my pending tasks made everything feel worth it.",positive,positive,joy,journal,synthetic
+461,I keep feeling disappointed in myself this semester because of a delayed response from someone important.,negative,negative,sadness,chat,synthetic
+462,Rescheduled placements with my coach for later today.,neutral,neutral,neutral,chat,synthetic
+463,"My mind won't stop racing about my hackathon submission, I feel really anxious since the results came out.",anxiety,anxiety,fear,chat,synthetic
+464,"Nothing feels exciting anymore, this week has just felt heavy because of a broken laptop right before a deadline.",negative,negative,sadness,journal,synthetic
+465,My stomach's been in knots since the deadline got moved up thinking about my driving test.,anxiety,anxiety,fear,journal,synthetic
+466,My stomach's been in knots lately thinking about my thesis.,anxiety,anxiety,fear,journal,synthetic
+467,"I feel so cared for by my advisor, especially for the past few days.",positive,love,love,chat,synthetic
+468,Rescheduled placements with my colleagues for later over the weekend.,neutral,neutral,neutral,journal,synthetic
+469,Never in a million years did I think finishing all my pending tasks would happen this whole term.,positive,surprise,surprise,chat,synthetic
+470,"My mind won't stop racing about my part-time job, I feel really anxious for a while now.",anxiety,anxiety,fear,journal,synthetic
+471,"I feel so cared for by my best friend, especially for a while now.",positive,love,love,chat,synthetic
+472,"I feel really discouraged recently, miscommunication with my team keeps pulling me down.",negative,negative,sadness,journal,synthetic
+473,"I've lost motivation for my performance review this semester, losing track of time really got to me.",negative,negative,sadness,journal,synthetic
+474,"Wasn't expecting my coach to bring up my hackathon submission this whole term, took me by surprise.",positive,surprise,surprise,chat,synthetic
+475,"Nothing feels exciting anymore, these days has just felt heavy because of conflicting priorities.",negative,negative,sadness,chat,synthetic
+476,Grateful doesn't even cover how I feel about my team all week.,positive,love,love,journal,synthetic
+477,"I've been thinking a lot about just disappearing, I can't handle unfair feedback anymore.",crisis,crisis,sadness,chat,synthetic
+478,my team checked in on me since the deadline got moved up and it meant a lot.,positive,love,love,journal,synthetic
+479,"Wasn't expecting my best friend to bring up my research paper since the results came out, took me by surprise.",positive,surprise,surprise,journal,synthetic
+480,"I did not expect a relaxing weekend trip, caught me completely off guard.",positive,surprise,surprise,journal,synthetic
+481,Spending time with my partner all week reminded me how lucky I am to have them.,positive,love,love,chat,synthetic
+482,"I feel really nervous about my internship, what if I mess it up?",anxiety,anxiety,fear,chat,synthetic
+483,"Everything about my performance review is irritating me over the weekend, especially miscommunication with my team.",anger,anger,anger,journal,synthetic
+484,Never in a million years did I think acing my exam would happen recently.,positive,surprise,surprise,chat,synthetic
+485,"I'm so frustrated with the sprint deadline, overthinking everything has completely thrown me off.",anger,anger,anger,journal,synthetic
+486,"I've been restless these days, a broken laptop right before a deadline keeps replaying in my head.",anxiety,anxiety,fear,chat,synthetic
+487,Reviewed the checklist for the sprint deadline today.,neutral,neutral,neutral,chat,synthetic
+488,"I'm dreading my final year project, my heart races just thinking about it.",anxiety,anxiety,fear,chat,synthetic
+489,"I don't feel like myself anymore, I just feel numb to everything for the past few days.",crisis,crisis,sadness,journal,synthetic
+490,"It's rare that I feel this good, but finishing all my pending tasks really did it for a while now.",positive,positive,joy,chat,synthetic
+491,"I've just felt off since last night, constant comparisons has been sitting heavy on my mind.",negative,negative,sadness,journal,synthetic
+492,"getting selected for the internship happened completely out of the blue this week, still processing it.",positive,surprise,surprise,chat,synthetic
+493,"I feel like such a burden to my sibling, everyone would be better off without me.",crisis,crisis,sadness,journal,synthetic
+494,"my roommate surprised me with their kindness over the weekend, I feel really loved.",positive,love,love,chat,synthetic
+495,Planning to start working on my final year project tomorrow.,neutral,neutral,neutral,journal,synthetic
+496,"I feel really grateful this week, especially after getting my certificate.",positive,positive,joy,chat,synthetic
+497,"Everything feels a bit gray this week, ever since money problems.",negative,negative,sadness,chat,synthetic
+498,Reviewed the checklist for the sprint deadline for a while now.,neutral,neutral,neutral,journal,synthetic
+499,"I feel trapped, like there's no way out of miscommunication with my team.",crisis,crisis,sadness,chat,synthetic
+500,"I'm really annoyed, unexpected extra work keeps happening and nobody seems to care.",anger,anger,anger,chat,synthetic
+501,"I feel kind of empty this whole term, overthinking everything has been really hard to deal with.",negative,negative,sadness,journal,synthetic
+502,"I feel like such a burden to my mentor, everyone would be better off without me.",crisis,crisis,sadness,chat,synthetic
+503,"I feel kind of empty all week, miscommunication with my team has been really hard to deal with.",negative,negative,sadness,journal,synthetic
+504,"I'm boiling over my thesis defense this week, especially after family expectations.",anger,anger,anger,chat,synthetic
+505,I organized my schedule for my coding assignment these days.,neutral,neutral,neutral,chat,synthetic
+506,Reviewed the checklist for my thesis defense all afternoon.,neutral,neutral,neutral,chat,synthetic
+507,"I feel so worthless this semester, like nothing I do matters to anyone.",crisis,crisis,sadness,chat,synthetic
+508,"I've been short-tempered with my cousin this month, an argument at home has me on edge.",anger,anger,anger,chat,synthetic
+509,"Everything feels a bit gray all week, ever since losing track of time.",negative,negative,sadness,chat,synthetic
+510,these days turned out amazing because of finishing all my pending tasks.,positive,positive,joy,chat,synthetic
+511,"I feel so worthless since the deadline got moved up, like nothing I do matters to anyone.",crisis,crisis,sadness,chat,synthetic
+512,"I don't really feel like doing anything this week, losing track of time has drained me.",negative,negative,sadness,chat,synthetic
+513,"I appreciate my neighbors so much, they've been so supportive this week.",positive,love,love,journal,synthetic
+514,Met with my sibling to discuss my presentation all afternoon.,neutral,neutral,neutral,chat,synthetic
+515,I keep imagining worst-case scenarios about my lab work for the past few days.,anxiety,anxiety,fear,chat,synthetic
+516,"I can't stop smiling after wrapping up a big project, best feeling ever.",positive,positive,joy,chat,synthetic
+517,"Everything feels a bit gray today, ever since not sleeping well.",negative,negative,sadness,journal,synthetic
+518,"I can't believe a last-minute change of plans, it's making me so angry since morning.",anger,anger,anger,chat,synthetic
+519,"I feel completely hopeless this semester, like nothing is ever going to get better.",crisis,crisis,sadness,chat,synthetic
+520,"I'm really annoyed, a fight with a friend keeps happening and nobody seems to care.",anger,anger,anger,journal,synthetic
+521,"I feel so worked up over a heavy workload, it's hard to calm down over the weekend.",anger,anger,anger,journal,synthetic
+522,Didn't see that coming — getting my certificate out of nowhere this month.,positive,surprise,surprise,chat,synthetic
+523,"I'm really thankful for my parents, they always know how to cheer me up.",positive,love,love,chat,synthetic
+524,"my in-laws surprised me with their kindness this week, I feel really loved.",positive,love,love,journal,synthetic
+525,"I appreciate my coach so much, they've been so supportive this month.",positive,love,love,chat,synthetic
+526,"I'm genuinely excited since last night, a long walk with a friend made everything feel worth it.",positive,positive,joy,journal,synthetic
+527,Met with my partner to discuss my research paper recently.,neutral,neutral,neutral,journal,synthetic
+528,getting rejected from an internship again? I'm honestly losing my patience all week.,anger,anger,anger,chat,synthetic
+529,Spending time with my in-laws since last night reminded me how lucky I am to have them.,positive,love,love,chat,synthetic
+530,family expectations again? I'm honestly losing my patience for a while now.,anger,anger,anger,chat,synthetic
+531,"I'm fed up with my apprenticeship for the past few days, not sleeping well is the last straw.",anger,anger,anger,chat,synthetic
+532,my cousin checked in on me this week and it meant a lot.,positive,love,love,journal,synthetic
+533,"I feel so worked up over overthinking everything, it's hard to calm down since last night.",anger,anger,anger,journal,synthetic
+534,"I keep tearing up randomly recently, I think it's an argument at home weighing on me.",negative,negative,sadness,journal,synthetic
+535,"I feel so worthless for a while now, like nothing I do matters to anyone.",crisis,crisis,sadness,chat,synthetic
+536,"I feel kind of empty these days, not getting enough sleep has been really hard to deal with.",negative,negative,sadness,chat,synthetic
+537,I was genuinely stunned recently when getting my certificate happened.,positive,surprise,surprise,chat,synthetic
+538,It's infuriating how family expectations keeps getting dismissed this month.,anger,anger,anger,journal,synthetic
+539,Spent since last night going through emails related to my thesis.,neutral,neutral,neutral,chat,synthetic
+540,Feeling really accomplished all afternoon after a long walk with a friend.,positive,positive,joy,chat,synthetic
+541,"Wasn't expecting my manager to bring up my dissertation defense since last night, took me by surprise.",positive,surprise,surprise,chat,synthetic
+542,I can't shake this uneasy feeling about college assignments all afternoon.,anxiety,anxiety,fear,journal,synthetic
+543,Grateful doesn't even cover how I feel about my cousin all afternoon.,positive,love,love,journal,synthetic
+544,"I can't stop smiling after acing my exam, best feeling ever.",positive,positive,joy,journal,synthetic
+545,"I feel trapped, like there's no way out of losing track of time.",crisis,crisis,sadness,chat,synthetic
+546,"I appreciate my group members so much, they've been so supportive for a while now.",positive,love,love,journal,synthetic
+547,"I feel completely hopeless over the weekend, like nothing is ever going to get better.",crisis,crisis,sadness,chat,synthetic
+548,Rescheduled placements with my roommate for later this whole term.,neutral,neutral,neutral,journal,synthetic
+549,I was genuinely stunned recently when finishing a workout happened.,positive,surprise,surprise,journal,synthetic
+550,"I keep tearing up randomly this whole term, I think it's a fight with a friend weighing on me.",negative,negative,sadness,chat,synthetic
+551,"I feel completely hopeless since morning, like nothing is ever going to get better.",crisis,crisis,sadness,journal,synthetic
+552,"I appreciate my classmates so much, they've been so supportive this month.",positive,love,love,journal,synthetic
+553,"I've just felt off since the results came out, a low grade has been sitting heavy on my mind.",negative,negative,sadness,journal,synthetic
+554,"I don't say it enough, but I really love how my group members always show up for me.",positive,love,love,journal,synthetic
+555,Spending time with my landlord over the weekend reminded me how lucky I am to have them.,positive,love,love,journal,synthetic
+556,I keep imagining worst-case scenarios about my presentation this semester.,anxiety,anxiety,fear,journal,synthetic
+557,I was genuinely stunned since last night when finally understanding a tough concept happened.,positive,surprise,surprise,journal,synthetic
+558,"I feel kind of empty recently, a missed deadline has been really hard to deal with.",negative,negative,sadness,journal,synthetic
+559,I nearly dropped my phone when I heard about wrapping up a big project for a while now.,positive,surprise,surprise,journal,synthetic
+560,"I can't believe getting rejected from an internship, it's making me so angry today.",anger,anger,anger,chat,synthetic
+561,I keep feeling disappointed in myself over the weekend because of a heavy workload.,negative,negative,sadness,journal,synthetic
+562,"I feel like such a burden to my professor, everyone would be better off without me.",crisis,crisis,sadness,journal,synthetic
+563,"I feel so worthless since yesterday, like nothing I do matters to anyone.",crisis,crisis,sadness,chat,synthetic
+564,Honestly since morning has been great — cooking a good meal and I feel proud of myself.,positive,positive,joy,journal,synthetic
+565,"I feel like giving up on everything, I don't see the point anymore.",crisis,crisis,sadness,chat,synthetic
+566,"I'm so happy about getting positive feedback from my mentor, it really made my since the results came out.",positive,positive,joy,journal,synthetic
+567,Updated my calendar for my presentation this semester.,neutral,neutral,neutral,journal,synthetic
+568,"I did not expect getting my certificate, caught me completely off guard.",positive,surprise,surprise,journal,synthetic
+569,"I can't stop smiling after finishing all my pending tasks, best feeling ever.",positive,positive,joy,chat,synthetic
+570,"I don't say it enough, but I really love how my professor always show up for me.",positive,love,love,chat,synthetic
+571,It's infuriating how not getting enough sleep keeps getting dismissed since yesterday.,anger,anger,anger,chat,synthetic
+572,Grateful doesn't even cover how I feel about my advisor these days.,positive,love,love,journal,synthetic
+573,"I'm really annoyed, a broken laptop right before a deadline keeps happening and nobody seems to care.",anger,anger,anger,chat,synthetic
+574,I keep imagining worst-case scenarios about my final year project since the results came out.,anxiety,anxiety,fear,journal,synthetic
+575,"Took some notes on exams this semester, nothing major to report.",neutral,neutral,neutral,journal,synthetic
+576,I organized my schedule for my capstone project this whole term.,neutral,neutral,neutral,journal,synthetic
+577,"I feel so cared for by my team, especially this month.",positive,love,love,chat,synthetic
+578,"Wasn't expecting my mentor to bring up my research paper since morning, took me by surprise.",positive,surprise,surprise,journal,synthetic
+579,Spending time with my manager all week reminded me how lucky I am to have them.,positive,love,love,chat,synthetic
+580,Spending time with my coach for the past few days reminded me how lucky I am to have them.,positive,love,love,chat,synthetic
+581,Feeling really accomplished for a while now after finishing all my pending tasks.,positive,positive,joy,journal,synthetic
+582,my manager checked in on me these days and it meant a lot.,positive,love,love,chat,synthetic
+583,Sent an update about my thesis defense to my classmates all afternoon.,neutral,neutral,neutral,journal,synthetic
+584,Feeling really accomplished since morning after getting positive feedback from my mentor.,positive,positive,joy,chat,synthetic
+585,"I can't believe unexpected extra work, it's making me so angry for the past few days.",anger,anger,anger,chat,synthetic
+586,Honestly since the results came out has been great — cooking a good meal and I feel proud of myself.,positive,positive,joy,journal,synthetic
+587,Grateful doesn't even cover how I feel about my partner over the weekend.,positive,love,love,chat,synthetic
+588,"I don't think I can keep going like this, it's all too much since the results came out.",crisis,crisis,sadness,journal,synthetic
+589,"I feel so worked up over a last-minute change of plans, it's hard to calm down today.",anger,anger,anger,journal,synthetic
+590,"Nothing feels exciting anymore, since the results came out has just felt heavy because of money problems.",negative,negative,sadness,chat,synthetic
+591,"I keep tearing up randomly this semester, I think it's a delayed response from someone important weighing on me.",negative,negative,sadness,chat,synthetic
+592,I nearly dropped my phone when I heard about getting my certificate since morning.,positive,surprise,surprise,journal,synthetic
+593,Planning to start working on my portfolio tomorrow.,neutral,neutral,neutral,journal,synthetic
+594,"I feel kind of empty this month, losing my train of thought during a presentation has been really hard to deal with.",negative,negative,sadness,chat,synthetic
+595,"I'm boiling over my group project since last night, especially after a heavy workload.",anger,anger,anger,chat,synthetic
+596,Honestly shocked that a broken laptop right before a deadline turned out this way this whole term.,positive,surprise,surprise,chat,synthetic
+597,"I don't say it enough, but I really love how my sibling always show up for me.",positive,love,love,chat,synthetic
+598,"I feel so worthless over the weekend, like nothing I do matters to anyone.",crisis,crisis,sadness,chat,synthetic
+599,this whole term turned out amazing because of a long walk with a friend.,positive,positive,joy,journal,synthetic
+600,Spending time with my manager this month reminded me how lucky I am to have them.,positive,love,love,chat,synthetic
+601,"I don't say it enough, but I really love how my landlord always show up for me.",positive,love,love,journal,synthetic
+602,Didn't see that coming — clearing a tough interview out of nowhere all week.,positive,surprise,surprise,chat,synthetic
+603,"I feel really discouraged this month, an argument at home keeps pulling me down.",negative,negative,sadness,journal,synthetic
+604,"I can't believe money problems, it's making me so angry today.",anger,anger,anger,journal,synthetic
+605,Updated my calendar for my lab work since the results came out.,neutral,neutral,neutral,journal,synthetic
+606,Spent for a while now going through emails related to my final year project.,neutral,neutral,neutral,chat,synthetic
+607,"I feel really nervous about my final year project, what if I mess it up?",anxiety,anxiety,fear,journal,synthetic
+608,"I appreciate my mentor so much, they've been so supportive this week.",positive,love,love,journal,synthetic
+609,"I'm genuinely excited all week, finally understanding a tough concept made everything feel worth it.",positive,positive,joy,journal,synthetic
+610,Grateful doesn't even cover how I feel about my team for a while now.,positive,love,love,chat,synthetic
+611,"I feel trapped, like there's no way out of an unclear set of instructions.",crisis,crisis,sadness,chat,synthetic
+612,Honestly shocked that getting rejected from an internship turned out this way these days.,positive,surprise,surprise,journal,synthetic
+613,Honestly shocked that a fight with a friend turned out this way since yesterday.,positive,surprise,surprise,journal,synthetic
+614,"I'm fed up with my portfolio since morning, a low grade is the last straw.",anger,anger,anger,journal,synthetic
+615,"Everything feels a bit gray since yesterday, ever since losing track of time.",negative,negative,sadness,journal,synthetic
+616,"Everything feels a bit gray since the deadline got moved up, ever since getting rejected from an internship.",negative,negative,sadness,journal,synthetic
+617,"I keep tearing up randomly all week, I think it's a low grade weighing on me.",negative,negative,sadness,journal,synthetic
+618,"Everything about exams is irritating me these days, especially a delayed response from someone important.",anger,anger,anger,chat,synthetic
+619,"I appreciate my best friend so much, they've been so supportive all week.",positive,love,love,chat,synthetic
+620,Grateful doesn't even cover how I feel about my partner this month.,positive,love,love,chat,synthetic
+621,My stomach's been in knots since last night thinking about my coding assignment.,anxiety,anxiety,fear,journal,synthetic
+622,My stomach's been in knots this whole term thinking about my research paper.,anxiety,anxiety,fear,chat,synthetic
+623,Rescheduled my capstone project with my classmates for later for the past few days.,neutral,neutral,neutral,chat,synthetic
+624,Didn't see that coming — cooking a good meal out of nowhere all week.,positive,surprise,surprise,chat,synthetic
+625,"I feel on edge all week, my capstone project is stressing me out more than usual.",anxiety,anxiety,fear,chat,synthetic
+626,"I've been short-tempered with my coach since last night, a last-minute change of plans has me on edge.",anger,anger,anger,journal,synthetic
+627,I can't shake this uneasy feeling about my driving test all afternoon.,anxiety,anxiety,fear,journal,synthetic
+628,"I don't really feel like doing anything all afternoon, an unclear set of instructions has drained me.",negative,negative,sadness,chat,synthetic
+629,Sent an update about my thesis defense to my mentor this month.,neutral,neutral,neutral,chat,synthetic
+630,"I've been thinking a lot about just disappearing, I can't handle not getting enough sleep anymore.",crisis,crisis,sadness,chat,synthetic
+631,"It's rare that I feel this good, but a long walk with a friend really did it this month.",positive,positive,joy,journal,synthetic
+632,"I feel so cared for by my partner, especially for a while now.",positive,love,love,chat,synthetic
+633,"I feel so cared for by my professor, especially since morning.",positive,love,love,journal,synthetic
+634,"I'm really thankful for my advisor, they always know how to cheer me up.",positive,love,love,journal,synthetic
+635,Didn't see that coming — a relaxing weekend trip out of nowhere this week.,positive,surprise,surprise,chat,synthetic
+636,"I'm fed up with my driving test today, getting rejected from an internship is the last straw.",anger,anger,anger,journal,synthetic
+637,"I've been short-tempered with my team since the results came out, a heavy workload has me on edge.",anger,anger,anger,chat,synthetic
+638,"I feel kind of empty recently, not getting enough sleep has been really hard to deal with.",negative,negative,sadness,journal,synthetic
+639,"Nothing feels exciting anymore, since the results came out has just felt heavy because of unexpected extra work.",negative,negative,sadness,journal,synthetic
+640,"I'm dreading my portfolio, my heart races just thinking about it.",anxiety,anxiety,fear,chat,synthetic
+641,"I appreciate my classmates so much, they've been so supportive today.",positive,love,love,chat,synthetic
+642,My stomach's been in knots for the past few days thinking about my thesis defense.,anxiety,anxiety,fear,chat,synthetic
+643,Honestly shocked that unfair feedback turned out this way today.,positive,surprise,surprise,chat,synthetic
+644,"I feel on edge this semester, my apprenticeship is stressing me out more than usual.",anxiety,anxiety,fear,chat,synthetic
+645,"I keep replaying a surprise call from an old friend in my head, it made since the deadline got moved up so much better.",positive,positive,joy,journal,synthetic
+646,I can't focus on anything else because I'm so worried about a broken laptop right before a deadline.,anxiety,anxiety,fear,chat,synthetic
+647,"I'm in such a good mood this whole term, getting my certificate really lifted my spirits.",positive,positive,joy,chat,synthetic
+648,"I can't stop smiling after getting a good night's sleep, best feeling ever.",positive,positive,joy,journal,synthetic
+649,"I've been thinking a lot about just disappearing, I can't handle a canceled plan I was looking forward to anymore.",crisis,crisis,sadness,journal,synthetic
+650,Never in a million years did I think a relaxing weekend trip would happen since morning.,positive,surprise,surprise,chat,synthetic
+651,I have the semester coming up and I can't stop worrying about it.,anxiety,anxiety,fear,journal,synthetic
+652,"I don't think I can keep going like this, it's all too much since yesterday.",crisis,crisis,sadness,chat,synthetic
+653,Planning to start working on my research paper tomorrow.,neutral,neutral,neutral,chat,synthetic
+654,I have my thesis scheduled for later for the past few days.,neutral,neutral,neutral,journal,synthetic
+655,"Things are finally going well with my scholarship application, feeling optimistic about it.",positive,positive,joy,journal,synthetic
+656,"I've been feeling really low this week, mostly because of a fight with a friend.",negative,negative,sadness,chat,synthetic
+657,"I've been thinking a lot about just disappearing, I can't handle constant comparisons anymore.",crisis,crisis,sadness,journal,synthetic
+658,Honestly shocked that not sleeping well turned out this way since yesterday.,positive,surprise,surprise,journal,synthetic
+659,"I don't think I can keep going like this, it's all too much since the deadline got moved up.",crisis,crisis,sadness,chat,synthetic
+660,"I'm so frustrated with the client demo, uncertainty about the future has completely thrown me off.",anger,anger,anger,journal,synthetic
+661,"I feel trapped, like there's no way out of unfair feedback.",crisis,crisis,sadness,journal,synthetic
+662,It's infuriating how an unclear set of instructions keeps getting dismissed all afternoon.,anger,anger,anger,chat,synthetic
+663,Didn't see that coming — getting appreciated in front of my team out of nowhere all week.,positive,surprise,surprise,chat,synthetic
+664,"Just wanted to share that getting a good night's sleep, I'm on top of the world right now.",positive,positive,joy,chat,synthetic
+665,Reviewed the checklist for my certification exam this week.,neutral,neutral,neutral,journal,synthetic
+666,Nothing matters to me anymore and I don't know how much longer I can take this.,crisis,crisis,sadness,journal,synthetic
+667,my landlord checked in on me this semester and it meant a lot.,positive,love,love,journal,synthetic
+668,"I'm so frustrated with my lab work, a fight with a friend has completely thrown me off.",anger,anger,anger,chat,synthetic
+669,Just finished going over notes for my final year project.,neutral,neutral,neutral,chat,synthetic
+670,since morning turned out amazing because of cooking a good meal.,positive,positive,joy,chat,synthetic
+671,"I can't believe constant comparisons, it's making me so angry for the past few days.",anger,anger,anger,chat,synthetic
+672,"I feel so worked up over overthinking everything, it's hard to calm down these days.",anger,anger,anger,journal,synthetic
+673,"Everything feels a bit gray since the deadline got moved up, ever since money problems.",negative,negative,sadness,journal,synthetic
+674,I was genuinely stunned all week when finishing my project early happened.,positive,surprise,surprise,chat,synthetic
+675,"I've been restless this week, a canceled plan I was looking forward to keeps replaying in my head.",anxiety,anxiety,fear,chat,synthetic
+676,"I feel really grateful for the past few days, especially after learning something new I'm excited about.",positive,positive,joy,journal,synthetic
+677,"I'm in such a good mood over the weekend, acing my exam really lifted my spirits.",positive,positive,joy,journal,synthetic
+678,"I feel so worthless this month, like nothing I do matters to anyone.",crisis,crisis,sadness,journal,synthetic
+679,"I feel completely hopeless for the past few days, like nothing is ever going to get better.",crisis,crisis,sadness,journal,synthetic
+680,Reviewed the checklist for my capstone project today.,neutral,neutral,neutral,journal,synthetic
+681,"I don't feel like myself anymore, I just feel numb to everything recently.",crisis,crisis,sadness,chat,synthetic
+682,"It's been a rough patch because of unfair feedback, I just feel sad most of the time.",negative,negative,sadness,chat,synthetic
+683,since the deadline got moved up turned out amazing because of finishing my project early.,positive,positive,joy,journal,synthetic
+684,unfair feedback again? I'm honestly losing my patience since morning.,anger,anger,anger,chat,synthetic
+685,"I can't stop smiling after learning something new I'm excited about, best feeling ever.",positive,positive,joy,journal,synthetic
+686,"I don't feel like myself anymore, I just feel numb to everything today.",crisis,crisis,sadness,journal,synthetic
+687,I nearly dropped my phone when I heard about finishing all my pending tasks since yesterday.,positive,surprise,surprise,journal,synthetic
+688,I keep feeling disappointed in myself all week because of losing my train of thought during a presentation.,negative,negative,sadness,journal,synthetic
+689,"I feel so worked up over overthinking everything, it's hard to calm down lately.",anger,anger,anger,chat,synthetic
+690,"It's rare that I feel this good, but getting my certificate really did it this week.",positive,positive,joy,chat,synthetic
+691,"I don't think I can keep going like this, it's all too much this month.",crisis,crisis,sadness,journal,synthetic
+692,"Things are finally going well with my apprenticeship, feeling optimistic about it.",positive,positive,joy,chat,synthetic
+693,Honestly shocked that an unclear set of instructions turned out this way this semester.,positive,surprise,surprise,chat,synthetic
+694,"I feel on edge today, my driving test is stressing me out more than usual.",anxiety,anxiety,fear,journal,synthetic
+695,"Everything about my dissertation defense is irritating me all afternoon, especially unexpected extra work.",anger,anger,anger,chat,synthetic
+696,"Took some notes on my presentation recently, nothing major to report.",neutral,neutral,neutral,journal,synthetic
+697,"Just wanted to share that getting a scholarship, I'm on top of the world right now.",positive,positive,joy,journal,synthetic
+698,"Everything about my coding assignment is irritating me since yesterday, especially a delayed response from someone important.",anger,anger,anger,journal,synthetic
+699,Reviewed the checklist for my internship today.,neutral,neutral,neutral,chat,synthetic
+700,"I've been restless since the deadline got moved up, uncertainty about the future keeps replaying in my head.",anxiety,anxiety,fear,chat,synthetic
+701,Honestly since the deadline got moved up has been great — a long walk with a friend and I feel proud of myself.,positive,positive,joy,chat,synthetic
+702,Grateful doesn't even cover how I feel about my advisor this semester.,positive,love,love,journal,synthetic
+703,"I'm dreading my performance review, my heart races just thinking about it.",anxiety,anxiety,fear,journal,synthetic
+704,"Everything feels a bit gray for a while now, ever since a delayed response from someone important.",negative,negative,sadness,chat,synthetic
+705,"I keep replaying getting a scholarship in my head, it made this week so much better.",positive,positive,joy,chat,synthetic
+706,"I feel really discouraged since the deadline got moved up, a low grade keeps pulling me down.",negative,negative,sadness,chat,synthetic
+707,"I feel so cared for by my group members, especially this whole term.",positive,love,love,chat,synthetic
+708,"I can't believe a missed deadline, it's making me so angry for the past few days.",anger,anger,anger,chat,synthetic
+709,"I'm in such a good mood since yesterday, learning something new I'm excited about really lifted my spirits.",positive,positive,joy,journal,synthetic
+710,"It's been a rough patch because of unexpected extra work, I just feel sad most of the time.",negative,negative,sadness,journal,synthetic
+711,"I've been thinking a lot about just disappearing, I can't handle a heavy workload anymore.",crisis,crisis,sadness,journal,synthetic
+712,Spent all afternoon going through emails related to my apprenticeship.,neutral,neutral,neutral,chat,synthetic
+713,"Wasn't expecting my roommate to bring up my final year project since the deadline got moved up, took me by surprise.",positive,surprise,surprise,journal,synthetic
+714,I keep imagining worst-case scenarios about exams this week.,anxiety,anxiety,fear,journal,synthetic
+715,"I feel really grateful since morning, especially after getting appreciated in front of my team.",positive,positive,joy,chat,synthetic
+716,Didn't see that coming — getting a scholarship out of nowhere since the deadline got moved up.,positive,surprise,surprise,journal,synthetic
+717,It's infuriating how getting rejected from an internship keeps getting dismissed over the weekend.,anger,anger,anger,chat,synthetic
+718,"I feel really grateful this month, especially after getting a scholarship.",positive,positive,joy,chat,synthetic
+719,"I keep replaying finishing my project early in my head, it made for the past few days so much better.",positive,positive,joy,journal,synthetic
+720,Didn't see that coming — getting selected for the internship out of nowhere lately.,positive,surprise,surprise,chat,synthetic
+721,Met with my group members to discuss my certification exam this whole term.,neutral,neutral,neutral,journal,synthetic
+722,"I'm so happy about getting a good night's sleep, it really made my this semester.",positive,positive,joy,chat,synthetic
+723,"I don't really feel like doing anything all week, a missed deadline has drained me.",negative,negative,sadness,journal,synthetic
+724,"I've lost motivation for my capstone project all week, a last-minute change of plans really got to me.",negative,negative,sadness,journal,synthetic
+725,Spending time with my colleagues since the deadline got moved up reminded me how lucky I am to have them.,positive,love,love,chat,synthetic
+726,Grateful doesn't even cover how I feel about my landlord this semester.,positive,love,love,chat,synthetic
+727,"I feel really discouraged this whole term, money problems keeps pulling me down.",negative,negative,sadness,journal,synthetic
+728,over the weekend turned out amazing because of fixing a bug I was stuck on.,positive,positive,joy,chat,synthetic
+729,"I feel trapped, like there's no way out of a delayed response from someone important.",crisis,crisis,sadness,chat,synthetic
+730,Sent an update about my thesis defense to my classmates all week.,neutral,neutral,neutral,journal,synthetic
+731,my best friend checked in on me since yesterday and it meant a lot.,positive,love,love,journal,synthetic
+732,Feeling really accomplished lately after getting appreciated in front of my team.,positive,positive,joy,chat,synthetic
+733,"My mind won't stop racing about my coding assignment, I feel really anxious these days.",anxiety,anxiety,fear,journal,synthetic
+734,"I did not expect getting selected for the internship, caught me completely off guard.",positive,surprise,surprise,journal,synthetic
+735,"It's been a rough patch because of a heavy workload, I just feel sad most of the time.",negative,negative,sadness,journal,synthetic
+736,my roommate checked in on me today and it meant a lot.,positive,love,love,chat,synthetic
+737,"I feel so worked up over a missed deadline, it's hard to calm down since the deadline got moved up.",anger,anger,anger,chat,synthetic
+738,"I feel really grateful for the past few days, especially after fixing a bug I was stuck on.",positive,positive,joy,chat,synthetic
+739,"Everything feels a bit gray since yesterday, ever since a fight with a friend.",negative,negative,sadness,chat,synthetic
+740,"I'm really annoyed, an unclear set of instructions keeps happening and nobody seems to care.",anger,anger,anger,chat,synthetic
+741,I was genuinely stunned this whole term when getting my certificate happened.,positive,surprise,surprise,journal,synthetic
+742,a heavy workload again? I'm honestly losing my patience recently.,anger,anger,anger,journal,synthetic
+743,"I feel like such a burden to my colleagues, everyone would be better off without me.",crisis,crisis,sadness,journal,synthetic
+744,Honestly all afternoon has been great — getting selected for the internship and I feel proud of myself.,positive,positive,joy,journal,synthetic
+745,"I feel so cared for by my coach, especially lately.",positive,love,love,chat,synthetic
+746,The weather has been pretty average since morning.,neutral,neutral,neutral,journal,synthetic
+747,this week turned out amazing because of getting positive feedback from my mentor.,positive,positive,joy,journal,synthetic
+748,"I've been restless this month, a last-minute change of plans keeps replaying in my head.",anxiety,anxiety,fear,chat,synthetic
+749,"I've lost motivation for my part-time job since morning, overthinking everything really got to me.",negative,negative,sadness,chat,synthetic
+750,"I'm dreading my thesis defense, my heart races just thinking about it.",anxiety,anxiety,fear,journal,synthetic
+751,"I'm fed up with my research paper this whole term, not getting enough sleep is the last straw.",anger,anger,anger,journal,synthetic
+752,My stomach's been in knots this whole term thinking about my hackathon submission.,anxiety,anxiety,fear,journal,synthetic
+753,"getting selected for the internship happened completely out of the blue since the results came out, still processing it.",positive,surprise,surprise,chat,synthetic
+754,"I keep replaying getting a scholarship in my head, it made all week so much better.",positive,positive,joy,chat,synthetic
+755,Honestly shocked that not sleeping well turned out this way this week.,positive,surprise,surprise,chat,synthetic
+756,"I feel like such a burden to my coach, everyone would be better off without me.",crisis,crisis,sadness,chat,synthetic
+757,"I've been thinking a lot about just disappearing, I can't handle uncertainty about the future anymore.",crisis,crisis,sadness,journal,synthetic
+758,"I've been feeling really low this semester, mostly because of not sleeping well.",negative,negative,sadness,journal,synthetic
+759,"Things are finally going well with my thesis, feeling optimistic about it.",positive,positive,joy,chat,synthetic
+760,"Took some notes on my coding assignment since yesterday, nothing major to report.",neutral,neutral,neutral,chat,synthetic
+761,Rescheduled my portfolio with my group members for later lately.,neutral,neutral,neutral,chat,synthetic
+762,Reviewed the checklist for my apprenticeship since yesterday.,neutral,neutral,neutral,journal,synthetic
+763,"I can't believe losing track of time, it's making me so angry all afternoon.",anger,anger,anger,chat,synthetic
+764,"I feel completely hopeless these days, like nothing is ever going to get better.",crisis,crisis,sadness,journal,synthetic
+765,"I snapped at my classmates for a while now, I've just been on edge because of a last-minute change of plans.",anger,anger,anger,journal,synthetic
+766,"I've been restless for the past few days, uncertainty about the future keeps replaying in my head.",anxiety,anxiety,fear,journal,synthetic
+767,Reviewed the checklist for my thesis all week.,neutral,neutral,neutral,chat,synthetic
+768,I keep feeling disappointed in myself since morning because of a delayed response from someone important.,negative,negative,sadness,journal,synthetic
+769,I have my capstone project scheduled for later over the weekend.,neutral,neutral,neutral,journal,synthetic
+770,"I've been restless for a while now, unexpected extra work keeps replaying in my head.",anxiety,anxiety,fear,chat,synthetic
+771,"a long walk with a friend happened completely out of the blue this whole term, still processing it.",positive,surprise,surprise,journal,synthetic
+772,I organized my schedule for my portfolio recently.,neutral,neutral,neutral,journal,synthetic
+773,"I'm in such a good mood since yesterday, cooking a good meal really lifted my spirits.",positive,positive,joy,chat,synthetic
+774,Rescheduled my thesis defense with my coach for later since the deadline got moved up.,neutral,neutral,neutral,chat,synthetic
+775,Never in a million years did I think spending time with my family would happen lately.,positive,surprise,surprise,chat,synthetic
+776,"I feel kind of empty this week, a missed deadline has been really hard to deal with.",negative,negative,sadness,journal,synthetic
+777,Sent an update about the sprint deadline to my manager all week.,neutral,neutral,neutral,journal,synthetic
+778,I can't focus on anything else because I'm so worried about overthinking everything.,anxiety,anxiety,fear,journal,synthetic
+779,Grateful doesn't even cover how I feel about my team since the results came out.,positive,love,love,chat,synthetic
+780,"My mind won't stop racing about my apprenticeship, I feel really anxious today.",anxiety,anxiety,fear,journal,synthetic
+781,"I keep tearing up randomly this week, I think it's money problems weighing on me.",negative,negative,sadness,chat,synthetic
+782,"I'm really thankful for my coach, they always know how to cheer me up.",positive,love,love,journal,synthetic
+783,"Wasn't expecting my colleagues to bring up my group project since the deadline got moved up, took me by surprise.",positive,surprise,surprise,chat,synthetic
+784,Honestly shocked that a missed deadline turned out this way today.,positive,surprise,surprise,journal,synthetic
+785,Grateful doesn't even cover how I feel about my advisor since yesterday.,positive,love,love,journal,synthetic
+786,Just the thought of college assignments makes my chest feel tight this semester.,anxiety,anxiety,fear,journal,synthetic
+787,"I'm genuinely excited over the weekend, a long walk with a friend made everything feel worth it.",positive,positive,joy,journal,synthetic
+788,"I appreciate my landlord so much, they've been so supportive all afternoon.",positive,love,love,journal,synthetic
+789,I can't focus on anything else because I'm so worried about an unclear set of instructions.,anxiety,anxiety,fear,journal,synthetic
+790,I keep imagining worst-case scenarios about college assignments all week.,anxiety,anxiety,fear,journal,synthetic
+791,"I'm exhausted from pretending I'm okay, I don't know how much more I can take.",crisis,crisis,sadness,journal,synthetic
+792,"I've been thinking a lot about just disappearing, I can't handle losing track of time anymore.",crisis,crisis,sadness,chat,synthetic
+793,I've been overthinking my viva today and it's making it hard to sleep.,anxiety,anxiety,fear,chat,synthetic
+794,"I've been thinking a lot about just disappearing, I can't handle not sleeping well anymore.",crisis,crisis,sadness,chat,synthetic
+795,Rescheduled my capstone project with my coach for later recently.,neutral,neutral,neutral,journal,synthetic
+796,"my manager surprised me with their kindness since the results came out, I feel really loved.",positive,love,love,chat,synthetic
+797,My stomach's been in knots this whole term thinking about exams.,anxiety,anxiety,fear,chat,synthetic
+798,"I appreciate my neighbors so much, they've been so supportive all week.",positive,love,love,chat,synthetic
+799,"getting a good night's sleep happened completely out of the blue all week, still processing it.",positive,surprise,surprise,chat,synthetic
+800,"I feel trapped, like there's no way out of a canceled plan I was looking forward to.",crisis,crisis,sadness,chat,synthetic
+801,I can't focus on anything else because I'm so worried about money problems.,anxiety,anxiety,fear,chat,synthetic
+802,"Nothing feels exciting anymore, these days has just felt heavy because of a delayed response from someone important.",negative,negative,sadness,chat,synthetic
+803,Honestly all week has been great — finally understanding a tough concept and I feel proud of myself.,positive,positive,joy,journal,synthetic
+804,"I'm so frustrated with my certification exam, conflicting priorities has completely thrown me off.",anger,anger,anger,journal,synthetic
+805,The weather has been pretty average for the past few days.,neutral,neutral,neutral,chat,synthetic
+806,"I'm really thankful for my partner, they always know how to cheer me up.",positive,love,love,chat,synthetic
+807,since the deadline got moved up turned out amazing because of wrapping up a big project.,positive,positive,joy,journal,synthetic
+808,Grateful doesn't even cover how I feel about my neighbors since morning.,positive,love,love,chat,synthetic
+809,I can't shake this uneasy feeling about my apprenticeship all week.,anxiety,anxiety,fear,chat,synthetic
+810,"Took some notes on my research paper since last night, nothing major to report.",neutral,neutral,neutral,journal,synthetic
+811,"I feel trapped, like there's no way out of getting rejected from an internship.",crisis,crisis,sadness,journal,synthetic
+812,"I don't think I can keep going like this, it's all too much all week.",crisis,crisis,sadness,chat,synthetic
+813,I was genuinely stunned for a while now when getting a good night's sleep happened.,positive,surprise,surprise,journal,synthetic
+814,"I'm so happy about cooking a good meal, it really made my today.",positive,positive,joy,chat,synthetic
+815,"I've lost motivation for my coding assignment this month, family expectations really got to me.",negative,negative,sadness,chat,synthetic
+816,I can't shake this uneasy feeling about my thesis this month.,anxiety,anxiety,fear,chat,synthetic
+817,"I feel completely hopeless recently, like nothing is ever going to get better.",crisis,crisis,sadness,journal,synthetic
+818,Didn't see that coming — finishing my project early out of nowhere this semester.,positive,surprise,surprise,journal,synthetic
+819,Met with my team to discuss exams all week.,neutral,neutral,neutral,chat,synthetic
+820,"I've been isolating myself this semester, a last-minute change of plans just left me feeling down.",negative,negative,sadness,chat,synthetic
+821,Spent today going through emails related to my coding assignment.,neutral,neutral,neutral,chat,synthetic
+822,Just finished going over notes for my capstone project.,neutral,neutral,neutral,chat,synthetic
+823,"I'm in such a good mood over the weekend, a surprise call from an old friend really lifted my spirits.",positive,positive,joy,journal,synthetic
+824,"I don't say it enough, but I really love how my best friend always show up for me.",positive,love,love,chat,synthetic
+825,I was genuinely stunned lately when clearing a tough interview happened.,positive,surprise,surprise,chat,synthetic
+826,Just finished going over notes for the client demo.,neutral,neutral,neutral,journal,synthetic
+827,"I don't think I can keep going like this, it's all too much this week.",crisis,crisis,sadness,chat,synthetic
+828,"I've been feeling really low since the results came out, mostly because of unexpected extra work.",negative,negative,sadness,chat,synthetic
+829,I was genuinely stunned since last night when finishing my project early happened.,positive,surprise,surprise,journal,synthetic
+830,"Things are finally going well with my research paper, feeling optimistic about it.",positive,positive,joy,chat,synthetic
+831,I nearly dropped my phone when I heard about finishing my project early this month.,positive,surprise,surprise,chat,synthetic
+832,Grateful doesn't even cover how I feel about my manager over the weekend.,positive,love,love,journal,synthetic
+833,Honestly shocked that money problems turned out this way all afternoon.,positive,surprise,surprise,journal,synthetic
+834,Never in a million years did I think getting my certificate would happen for a while now.,positive,surprise,surprise,journal,synthetic
+835,Spending time with my colleagues for a while now reminded me how lucky I am to have them.,positive,love,love,journal,synthetic
+836,unexpected extra work again? I'm honestly losing my patience this whole term.,anger,anger,anger,chat,synthetic
+837,"I'm fed up with my lab work for the past few days, unexpected extra work is the last straw.",anger,anger,anger,journal,synthetic
+838,Grateful doesn't even cover how I feel about my colleagues since the deadline got moved up.,positive,love,love,journal,synthetic
+839,"I'm genuinely excited this week, cooking a good meal made everything feel worth it.",positive,positive,joy,journal,synthetic
+840,Didn't see that coming — a relaxing weekend trip out of nowhere these days.,positive,surprise,surprise,chat,synthetic
+841,Honestly shocked that losing my train of thought during a presentation turned out this way this week.,positive,surprise,surprise,journal,synthetic
+842,I nearly dropped my phone when I heard about finishing all my pending tasks recently.,positive,surprise,surprise,journal,synthetic
+843,my roommate checked in on me all afternoon and it meant a lot.,positive,love,love,chat,synthetic
+844,"I'm so frustrated with college assignments, unexpected extra work has completely thrown me off.",anger,anger,anger,chat,synthetic
+845,"I've been isolating myself this week, unfair feedback just left me feeling down.",negative,negative,sadness,chat,synthetic
+846,"I feel really nervous about my presentation, what if I mess it up?",anxiety,anxiety,fear,chat,synthetic
+847,"I'm really annoyed, a canceled plan I was looking forward to keeps happening and nobody seems to care.",anger,anger,anger,journal,synthetic
+848,"I don't feel like myself anymore, I just feel numb to everything this semester.",crisis,crisis,sadness,chat,synthetic
+849,"I've been feeling really low recently, mostly because of a delayed response from someone important.",negative,negative,sadness,chat,synthetic
+850,"I'm really thankful for my roommate, they always know how to cheer me up.",positive,love,love,journal,synthetic
+851,Never in a million years did I think finally understanding a tough concept would happen recently.,positive,surprise,surprise,journal,synthetic
+852,"I'm so frustrated with my viva, money problems has completely thrown me off.",anger,anger,anger,chat,synthetic
+853,Rescheduled my presentation with my group members for later since last night.,neutral,neutral,neutral,journal,synthetic
+854,Didn't see that coming — a surprise call from an old friend out of nowhere lately.,positive,surprise,surprise,journal,synthetic
+855,"getting appreciated in front of my team happened completely out of the blue all afternoon, still processing it.",positive,surprise,surprise,journal,synthetic
+856,"It's rare that I feel this good, but getting a scholarship really did it this whole term.",positive,positive,joy,journal,synthetic
+857,"I feel completely hopeless this week, like nothing is ever going to get better.",crisis,crisis,sadness,journal,synthetic
+858,"I'm in such a good mood all afternoon, wrapping up a big project really lifted my spirits.",positive,positive,joy,journal,synthetic
+859,"Took some notes on my part-time job this semester, nothing major to report.",neutral,neutral,neutral,journal,synthetic
+860,Rescheduled my thesis defense with my best friend for later all afternoon.,neutral,neutral,neutral,chat,synthetic
+861,Honestly shocked that a canceled plan I was looking forward to turned out this way all week.,positive,surprise,surprise,journal,synthetic
+862,"Things are finally going well with the semester, feeling optimistic about it.",positive,positive,joy,chat,synthetic
+863,"I've been restless recently, unfair feedback keeps replaying in my head.",anxiety,anxiety,fear,chat,synthetic
+864,"I'm fed up with my thesis defense this semester, a last-minute change of plans is the last straw.",anger,anger,anger,chat,synthetic
+865,"Wasn't expecting my mentor to bring up my internship all afternoon, took me by surprise.",positive,surprise,surprise,chat,synthetic
+866,I can't shake this uneasy feeling about the client demo for the past few days.,anxiety,anxiety,fear,chat,synthetic
+867,I organized my schedule for my final year project for a while now.,neutral,neutral,neutral,journal,synthetic
+868,I organized my schedule for my driving test since the results came out.,neutral,neutral,neutral,journal,synthetic
+869,"I've been thinking a lot about just disappearing, I can't handle losing my train of thought during a presentation anymore.",crisis,crisis,sadness,chat,synthetic
+870,"I'm fed up with the client demo since the deadline got moved up, conflicting priorities is the last straw.",anger,anger,anger,chat,synthetic
+871,"I feel so cared for by my sibling, especially for the past few days.",positive,love,love,chat,synthetic
+872,Met with my in-laws to discuss my portfolio this whole term.,neutral,neutral,neutral,journal,synthetic
+873,Honestly over the weekend has been great — finishing all my pending tasks and I feel proud of myself.,positive,positive,joy,journal,synthetic
+874,"I'm so happy about getting a good night's sleep, it really made my for a while now.",positive,positive,joy,chat,synthetic
+875,It's infuriating how uncertainty about the future keeps getting dismissed since the results came out.,anger,anger,anger,journal,synthetic
+876,I have my part-time job coming up and I can't stop worrying about it.,anxiety,anxiety,fear,journal,synthetic
+877,"I'm so happy about wrapping up a big project, it really made my all week.",positive,positive,joy,chat,synthetic
+878,Reviewed the checklist for placements since yesterday.,neutral,neutral,neutral,journal,synthetic
+879,Grateful doesn't even cover how I feel about my roommate since last night.,positive,love,love,chat,synthetic
+880,Sent an update about my capstone project to my neighbors since morning.,neutral,neutral,neutral,journal,synthetic
+881,"I'm genuinely excited all week, a relaxing weekend trip made everything feel worth it.",positive,positive,joy,journal,synthetic
+882,"I feel kind of empty for the past few days, a canceled plan I was looking forward to has been really hard to deal with.",negative,negative,sadness,journal,synthetic
+883,Just the thought of college assignments makes my chest feel tight this whole term.,anxiety,anxiety,fear,journal,synthetic
+884,"I snapped at my cousin today, I've just been on edge because of a heavy workload.",anger,anger,anger,journal,synthetic
+885,"I feel so worthless all week, like nothing I do matters to anyone.",crisis,crisis,sadness,journal,synthetic
+886,"I've just felt off all week, an unclear set of instructions has been sitting heavy on my mind.",negative,negative,sadness,chat,synthetic
+887,"I've been isolating myself this whole term, a missed deadline just left me feeling down.",negative,negative,sadness,journal,synthetic
+888,Rescheduled college assignments with my sibling for later since the results came out.,neutral,neutral,neutral,chat,synthetic
+889,"I've been thinking a lot about just disappearing, I can't handle conflicting priorities anymore.",crisis,crisis,sadness,journal,synthetic
+890,"I don't think I can keep going like this, it's all too much for a while now.",crisis,crisis,sadness,chat,synthetic
+891,"I'm fed up with my coding assignment this semester, a missed deadline is the last straw.",anger,anger,anger,journal,synthetic
+892,I have my final year project scheduled for later since the results came out.,neutral,neutral,neutral,journal,synthetic
+893,"I feel trapped, like there's no way out of a fight with a friend.",crisis,crisis,sadness,journal,synthetic
+894,"Everything feels a bit gray recently, ever since an argument at home.",negative,negative,sadness,journal,synthetic
+895,Updated my calendar for my performance review since yesterday.,neutral,neutral,neutral,chat,synthetic
+896,"I've been isolating myself this month, overthinking everything just left me feeling down.",negative,negative,sadness,journal,synthetic
+897,Just finished going over notes for my presentation.,neutral,neutral,neutral,journal,synthetic
+898,"I feel trapped, like there's no way out of money problems.",crisis,crisis,sadness,journal,synthetic
+899,"spending time with my family happened completely out of the blue this whole term, still processing it.",positive,surprise,surprise,chat,synthetic
+900,"I've been thinking a lot about just disappearing, I can't handle unexpected extra work anymore.",crisis,crisis,sadness,journal,synthetic
+901,Met with my best friend to discuss my scholarship application all afternoon.,neutral,neutral,neutral,journal,synthetic
+902,my colleagues checked in on me these days and it meant a lot.,positive,love,love,chat,synthetic
+903,"I'm boiling over my certification exam for a while now, especially after a canceled plan I was looking forward to.",anger,anger,anger,chat,synthetic
+904,"I don't feel like myself anymore, I just feel numb to everything since the results came out.",crisis,crisis,sadness,chat,synthetic
+905,"I keep tearing up randomly over the weekend, I think it's unexpected extra work weighing on me.",negative,negative,sadness,chat,synthetic
+906,I can't focus on anything else because I'm so worried about a heavy workload.,anxiety,anxiety,fear,chat,synthetic
+907,"Took some notes on my thesis defense since the deadline got moved up, nothing major to report.",neutral,neutral,neutral,chat,synthetic
+908,"I feel so cared for by my manager, especially since the results came out.",positive,love,love,journal,synthetic
+909,I was genuinely stunned this week when getting a scholarship happened.,positive,surprise,surprise,chat,synthetic
+910,"my in-laws surprised me with their kindness all week, I feel really loved.",positive,love,love,journal,synthetic
+911,I have my scholarship application scheduled for later since the results came out.,neutral,neutral,neutral,journal,synthetic
+912,unfair feedback again? I'm honestly losing my patience this semester.,anger,anger,anger,journal,synthetic
+913,"I'm in such a good mood recently, getting my certificate really lifted my spirits.",positive,positive,joy,chat,synthetic
+914,"Everything feels a bit gray since the results came out, ever since miscommunication with my team.",negative,negative,sadness,journal,synthetic
+915,"It's rare that I feel this good, but learning something new I'm excited about really did it since the deadline got moved up.",positive,positive,joy,chat,synthetic
+916,I can't shake this uneasy feeling about my driving test for a while now.,anxiety,anxiety,fear,chat,synthetic
+917,I keep imagining worst-case scenarios about my part-time job today.,anxiety,anxiety,fear,journal,synthetic
+918,Honestly shocked that getting rejected from an internship turned out this way this week.,positive,surprise,surprise,chat,synthetic
+919,Spending time with my group members today reminded me how lucky I am to have them.,positive,love,love,chat,synthetic
+920,"I feel really grateful lately, especially after finishing a workout.",positive,positive,joy,journal,synthetic
+921,"I've lost motivation for my scholarship application this month, a canceled plan I was looking forward to really got to me.",negative,negative,sadness,chat,synthetic
+922,I can't focus on anything else because I'm so worried about losing my train of thought during a presentation.,anxiety,anxiety,fear,chat,synthetic
+923,"finishing a workout happened completely out of the blue this week, still processing it.",positive,surprise,surprise,journal,synthetic
+924,I've been overthinking my portfolio all week and it's making it hard to sleep.,anxiety,anxiety,fear,journal,synthetic
+925,"I don't say it enough, but I really love how my neighbors always show up for me.",positive,love,love,journal,synthetic
+926,The weather has been pretty average recently.,neutral,neutral,neutral,journal,synthetic
+927,"I did not expect getting a scholarship, caught me completely off guard.",positive,surprise,surprise,journal,synthetic
+928,"I feel kind of empty since yesterday, a missed deadline has been really hard to deal with.",negative,negative,sadness,journal,synthetic
+929,"I'm fed up with college assignments this whole term, constant comparisons is the last straw.",anger,anger,anger,chat,synthetic
+930,Planning to start working on my thesis tomorrow.,neutral,neutral,neutral,chat,synthetic
+931,Never in a million years did I think getting selected for the internship would happen lately.,positive,surprise,surprise,journal,synthetic
+932,"I've just felt off since the deadline got moved up, an unclear set of instructions has been sitting heavy on my mind.",negative,negative,sadness,chat,synthetic
+933,"I've been restless this semester, unexpected extra work keeps replaying in my head.",anxiety,anxiety,fear,journal,synthetic
+934,"I feel really discouraged today, a fight with a friend keeps pulling me down.",negative,negative,sadness,journal,synthetic
+935,"I've been short-tempered with my classmates this semester, money problems has me on edge.",anger,anger,anger,chat,synthetic
+936,"I feel really grateful since the deadline got moved up, especially after cooking a good meal.",positive,positive,joy,chat,synthetic
+937,"It's rare that I feel this good, but cooking a good meal really did it recently.",positive,positive,joy,chat,synthetic
+938,"my roommate surprised me with their kindness since yesterday, I feel really loved.",positive,love,love,journal,synthetic
+939,Reviewed the checklist for my viva this month.,neutral,neutral,neutral,journal,synthetic
+940,"I've just felt off lately, unexpected extra work has been sitting heavy on my mind.",negative,negative,sadness,journal,synthetic
+941,Just finished going over notes for my internship.,neutral,neutral,neutral,chat,synthetic
+942,Never in a million years did I think a relaxing weekend trip would happen recently.,positive,surprise,surprise,journal,synthetic
+943,"I don't feel like myself anymore, I just feel numb to everything all afternoon.",crisis,crisis,sadness,chat,synthetic
+944,I was genuinely stunned over the weekend when finishing a workout happened.,positive,surprise,surprise,journal,synthetic
+945,"I keep replaying a surprise call from an old friend in my head, it made since morning so much better.",positive,positive,joy,chat,synthetic
+946,"I'm so happy about finally understanding a tough concept, it really made my all afternoon.",positive,positive,joy,chat,synthetic
+947,"I've been short-tempered with my roommate today, losing my train of thought during a presentation has me on edge.",anger,anger,anger,journal,synthetic
+948,"I feel trapped, like there's no way out of a broken laptop right before a deadline.",crisis,crisis,sadness,chat,synthetic
+949,"I feel completely hopeless since the results came out, like nothing is ever going to get better.",crisis,crisis,sadness,chat,synthetic
+950,"I feel so worked up over an unclear set of instructions, it's hard to calm down since last night.",anger,anger,anger,journal,synthetic
+951,I can't focus on anything else because I'm so worried about a fight with a friend.,anxiety,anxiety,fear,journal,synthetic
+952,"I've been feeling really low all week, mostly because of unfair feedback.",negative,negative,sadness,journal,synthetic
+953,Honestly shocked that an unclear set of instructions turned out this way for a while now.,positive,surprise,surprise,chat,synthetic
+954,my professor checked in on me since yesterday and it meant a lot.,positive,love,love,chat,synthetic
+955,"I've been restless since the results came out, overthinking everything keeps replaying in my head.",anxiety,anxiety,fear,journal,synthetic
+956,It's infuriating how constant comparisons keeps getting dismissed over the weekend.,anger,anger,anger,journal,synthetic
+957,my classmates checked in on me over the weekend and it meant a lot.,positive,love,love,chat,synthetic
+958,Never in a million years did I think getting a scholarship would happen since the results came out.,positive,surprise,surprise,chat,synthetic
+959,"I feel so cared for by my sibling, especially lately.",positive,love,love,chat,synthetic
+960,I can't focus on anything else because I'm so worried about constant comparisons.,anxiety,anxiety,fear,chat,synthetic
+961,I have the semester scheduled for later all week.,neutral,neutral,neutral,journal,synthetic
+962,"getting selected for the internship happened completely out of the blue since the deadline got moved up, still processing it.",positive,surprise,surprise,chat,synthetic
+963,"I can't stop smiling after a long walk with a friend, best feeling ever.",positive,positive,joy,journal,synthetic
+964,"I'm really annoyed, a low grade keeps happening and nobody seems to care.",anger,anger,anger,chat,synthetic
+965,"I feel like such a burden to my group members, everyone would be better off without me.",crisis,crisis,sadness,journal,synthetic
+966,Just the thought of my certification exam makes my chest feel tight recently.,anxiety,anxiety,fear,journal,synthetic
+967,"I've been feeling really low this month, mostly because of overthinking everything.",negative,negative,sadness,journal,synthetic
+968,Grateful doesn't even cover how I feel about my best friend this week.,positive,love,love,journal,synthetic
+969,"clearing a tough interview happened completely out of the blue since the deadline got moved up, still processing it.",positive,surprise,surprise,journal,synthetic
+970,Planning to start working on my part-time job tomorrow.,neutral,neutral,neutral,chat,synthetic
+971,"I feel on edge this semester, my performance review is stressing me out more than usual.",anxiety,anxiety,fear,journal,synthetic
+972,I nearly dropped my phone when I heard about cooking a good meal all afternoon.,positive,surprise,surprise,chat,synthetic
+973,"I've been isolating myself lately, losing track of time just left me feeling down.",negative,negative,sadness,journal,synthetic
+974,"I'm in such a good mood this month, getting positive feedback from my mentor really lifted my spirits.",positive,positive,joy,journal,synthetic
+975,I organized my schedule for the sprint deadline this week.,neutral,neutral,neutral,chat,synthetic
+976,Just the thought of my capstone project makes my chest feel tight these days.,anxiety,anxiety,fear,chat,synthetic
+977,"I feel really nervous about the client demo, what if I mess it up?",anxiety,anxiety,fear,journal,synthetic
+978,"I feel trapped, like there's no way out of uncertainty about the future.",crisis,crisis,sadness,journal,synthetic
+979,Feeling really accomplished this whole term after getting my certificate.,positive,positive,joy,chat,synthetic
+980,"I've been thinking a lot about just disappearing, I can't handle family expectations anymore.",crisis,crisis,sadness,journal,synthetic
+981,"I don't feel like myself anymore, I just feel numb to everything since yesterday.",crisis,crisis,sadness,chat,synthetic
+982,Spending time with my in-laws all afternoon reminded me how lucky I am to have them.,positive,love,love,chat,synthetic
+983,I organized my schedule for my portfolio all week.,neutral,neutral,neutral,chat,synthetic
+984,"I'm really annoyed, a delayed response from someone important keeps happening and nobody seems to care.",anger,anger,anger,chat,synthetic
+985,"I'm genuinely excited since morning, finishing my project early made everything feel worth it.",positive,positive,joy,chat,synthetic
+986,"Everything about my final year project is irritating me this month, especially a last-minute change of plans.",anger,anger,anger,chat,synthetic
+987,"I'm so happy about learning something new I'm excited about, it really made my today.",positive,positive,joy,chat,synthetic
+988,"I feel so worked up over conflicting priorities, it's hard to calm down since morning.",anger,anger,anger,chat,synthetic
+989,I've been overthinking my apprenticeship since last night and it's making it hard to sleep.,anxiety,anxiety,fear,chat,synthetic
+990,"I'm fed up with my lab work all week, a fight with a friend is the last straw.",anger,anger,anger,chat,synthetic
+991,"I keep tearing up randomly these days, I think it's money problems weighing on me.",negative,negative,sadness,journal,synthetic
+992,"It's rare that I feel this good, but getting positive feedback from my mentor really did it this month.",positive,positive,joy,journal,synthetic
+993,"I've been isolating myself all afternoon, a delayed response from someone important just left me feeling down.",negative,negative,sadness,journal,synthetic
+994,"I'm in such a good mood over the weekend, getting positive feedback from my mentor really lifted my spirits.",positive,positive,joy,chat,synthetic
+995,"I feel trapped, like there's no way out of an argument at home.",crisis,crisis,sadness,journal,synthetic
+996,"I'm fed up with the client demo since morning, money problems is the last straw.",anger,anger,anger,journal,synthetic
+997,"I've been restless all week, money problems keeps replaying in my head.",anxiety,anxiety,fear,journal,synthetic
+998,"Wasn't expecting my in-laws to bring up my driving test this semester, took me by surprise.",positive,surprise,surprise,chat,synthetic
+999,My stomach's been in knots recently thinking about my dissertation defense.,anxiety,anxiety,fear,journal,synthetic
+1000,My stomach's been in knots lately thinking about my group project.,anxiety,anxiety,fear,journal,synthetic

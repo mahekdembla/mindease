@@ -532,7 +532,6 @@ function Settings() {
 </div>
 
             </div>
-        </div>
     );
 }
 
