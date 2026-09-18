@@ -8,6 +8,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import os
+from rag import generate_llm_response
 
 # INIT APP
 
@@ -29,13 +30,15 @@ print("Loading models...")
 
 emotion_model = pipeline(
     "text-classification",
-    model="SamLowe/roberta-base-go_emotions",
+    model="training/models/emotion-classifier",
+    tokenizer="training/models/emotion-classifier",
     top_k=3
 )
 
 mental_model = pipeline(
     "text-classification",
-    model="bhadresh-savani/distilbert-base-uncased-emotion"
+    model="training/models/risk-classifier",
+    tokenizer="training/models/risk-classifier"
 )
 
 safety_model = pipeline(
@@ -73,24 +76,22 @@ def map_emotion(label):
 
 
 # RESPONSE GENERATION
+def generate_response(emotion, mental_state, user_text):
+    llm_reply = generate_llm_response(user_text, emotion, mental_state)
+    if llm_reply:
+        return llm_reply
 
-def generate_response(emotion, mental_state):
-
+    # fallback if the LLM call fails or no API key is set
     if mental_state == "sadness":
         return "I'm really sorry you're feeling low. Do you want to talk about what's been bothering you?"
-
     elif mental_state == "anger":
         return "It sounds like something is frustrating you. Would you like to share more?"
-
     elif mental_state == "fear":
         return "I understand you're feeling anxious. What's making you feel this way?"
-
     elif emotion == "positive":
         return "That's great to hear 😊 What made you feel this way today?"
-
     else:
         return "I'm here for you. Tell me more about what's on your mind."
-
 
 # SAFETY DETECTION
 
@@ -299,9 +300,10 @@ def chat(req: ChatRequest):
 
     # RESPONSE
 
-    response = generate_response(
+       response = generate_response(
         final_emotion,
-        mental_state
+        mental_state,
+        user_input
     )
 
 

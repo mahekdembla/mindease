@@ -15,3 +15,11 @@ backend/venv/
 backend/chat_history.json
 backend/journal.json
 backend/Journal.json
+
+# Secrets
+backend/.env
+
+# Training data and models (too large for git)
+backend/training/data/
+backend/training/models/
+backend/training/*.zip

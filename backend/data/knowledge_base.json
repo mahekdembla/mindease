@@ -1,0 +1,10 @@
+cat << 'EOF' > data/knowledge_base.json
+[
+  {"tag": "sadness", "text": "Small, achievable actions like a short walk or messaging one friend tend to help more than trying to fix everything at once when motivation is low."},
+  {"tag": "anger", "text": "Naming the specific thing that's frustrating, out loud or in writing, often helps more than trying to push the feeling away."},
+  {"tag": "fear", "text": "Grounding techniques like naming 5 things you can see, 4 you can touch, 3 you can hear can help interrupt anxious spiraling in the moment."},
+  {"tag": "anxiety", "text": "Slow breathing, in for 4 counts, hold for 4, out for 6, can help calm the body's stress response within a few minutes."},
+  {"tag": "neutral", "text": "Checking in on basic needs like sleep, food, and water is a good first step when nothing feels particularly wrong or right."},
+  {"tag": "joy", "text": "Noting what specifically contributed to a good moment can help recognize what to lean into more often."}
+]
+EOF
