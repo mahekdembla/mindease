@@ -10,17 +10,63 @@ function SafePlace() {
   const [newContactEmail, setNewContactEmail] = useState("");
   
   useEffect(() => {
-    const savedContacts = JSON.parse(localStorage.getItem("trustedContacts")) || [];
-    setContacts(savedContacts);
-    
+    const loadContacts = async () => {
+      try {
+        const res = await fetch("http://127.0.0.1:8000/api/contacts", {
+          credentials: "include",
+          headers: {
+            "Authorization": `Bearer ${localStorage.getItem("mindease_token") || ""}`
+          }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setContacts(data);
+          localStorage.setItem("trustedContacts", JSON.stringify(data));
+          return;
+        }
+      } catch (e) {
+        console.error("Failed to load contacts from API:", e);
+      }
+      const savedContacts = JSON.parse(localStorage.getItem("trustedContacts")) || [];
+      setContacts(savedContacts);
+    };
+
+    loadContacts();
+
     const savedActivities = JSON.parse(localStorage.getItem("safetyActivities")) || [];
-    // Sort latest first
     setActivities(savedActivities.sort((a, b) => b.timestamp - a.timestamp));
   }, []);
   
-  const handleAddContact = () => {
-    if (!newContactName.trim()) return;
+  const handleAddContact = async () => {
+    if (!newContactName.trim() || !newContactEmail.trim()) return;
     
+    try {
+      const res = await fetch("http://127.0.0.1:8000/api/contacts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("mindease_token") || ""}`
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          name: newContactName,
+          email: newContactEmail,
+          receive_sos: true
+        })
+      });
+      if (res.ok) {
+        const newContact = await res.json();
+        const updated = [...contacts, newContact];
+        setContacts(updated);
+        localStorage.setItem("trustedContacts", JSON.stringify(updated));
+        setNewContactName("");
+        setNewContactEmail("");
+        return;
+      }
+    } catch (e) {
+      console.error("Failed to add contact:", e);
+    }
+
     const newContact = {
       id: Date.now(),
       name: newContactName,
@@ -31,12 +77,22 @@ function SafePlace() {
     const updated = [...contacts, newContact];
     setContacts(updated);
     localStorage.setItem("trustedContacts", JSON.stringify(updated));
-    
     setNewContactName("");
     setNewContactEmail("");
   };
   
-  const handleDeleteContact = (id) => {
+  const handleDeleteContact = async (id) => {
+    try {
+      await fetch(`http://127.0.0.1:8000/api/contacts/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("mindease_token") || ""}`
+        }
+      });
+    } catch (e) {
+      console.error("Failed to delete contact API:", e);
+    }
     const updated = contacts.filter(c => c.id !== id);
     setContacts(updated);
     localStorage.setItem("trustedContacts", JSON.stringify(updated));
@@ -52,6 +108,7 @@ function SafePlace() {
     setContacts(updated);
     localStorage.setItem("trustedContacts", JSON.stringify(updated));
   };
+
   
   return (
     <div className="p-8 w-full flex flex-col h-screen overflow-y-auto">

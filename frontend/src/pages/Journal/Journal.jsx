@@ -9,6 +9,13 @@ import {
 
 import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
+import {
+    fetchJournalEntries,
+    saveJournalEntry,
+    updateJournalEntry,
+    deleteJournalEntry
+} from "../../services/api";
+
 
 function Journal() {
     const [entry, setEntry] = useState("");
@@ -35,18 +42,10 @@ function Journal() {
     useEffect(() => {
         const loadEntries = async () => {
             try {
-                const response = await fetch(
-                    "http://127.0.0.1:8000/journal"
-                );
-
-                if (!response.ok) {
-                    throw new Error("Failed to load journal");
-                }
-
-                const data = await response.json();
+                const data = await fetchJournalEntries();
 
                 const formattedEntries = data.map((item) => ({
-                    id: item.id,
+                    id: item.id || item._id,
                     text: item.text,
                     mood: item.mood || "",
                     date: item.time,
@@ -72,56 +71,29 @@ function Journal() {
         setIsLoading(true);
 
         try {
-            let response;
+            let data;
 
             // UPDATE existing entry
             if (editingIndex !== null) {
                 const existingEntry =
                     entries[editingIndex];
 
-                response = await fetch(
-                    `http://127.0.0.1:8000/journal/${existingEntry.id}`,
-                    {
-                        method: "PUT",
-                        headers: {
-                            "Content-Type":
-                                "application/json",
-                        },
-                        body: JSON.stringify({
-                            text: entry.trim(),
-                            mood: selectedMood,
-                        }),
-                    }
+                data = await updateJournalEntry(
+                    existingEntry.id,
+                    entry.trim(),
+                    selectedMood
                 );
 
             // CREATE new entry
             } else {
-                response = await fetch(
-                    "http://127.0.0.1:8000/journal",
-                    {
-                        method: "POST",
-                        headers: {
-                            "Content-Type":
-                                "application/json",
-                        },
-                        body: JSON.stringify({
-                            text: entry.trim(),
-                            mood: selectedMood,
-                        }),
-                    }
+                data = await saveJournalEntry(
+                    entry.trim(),
+                    selectedMood
                 );
             }
-
-            if (!response.ok) {
-                throw new Error(
-                    "Failed to save journal"
-                );
-            }
-
-            const data = await response.json();
 
             const updatedEntry = {
-                id: data.entry.id,
+                id: data.entry.id || data.entry._id,
                 text: data.entry.text,
                 mood: data.entry.mood,
                 date: data.entry.time,
@@ -192,18 +164,7 @@ function Journal() {
         const item = entries[deleteIndex];
 
         try {
-            const response = await fetch(
-                `http://127.0.0.1:8000/journal/${item.id}`,
-                {
-                    method: "DELETE",
-                }
-            );
-
-            if (!response.ok) {
-                throw new Error(
-                    "Failed to delete journal entry"
-                );
-            }
+            await deleteJournalEntry(item.id);
 
             setEntries(
                 entries.filter(
@@ -215,7 +176,7 @@ function Journal() {
 
         } catch (error) {
             console.error(
-                "Delete error:",
+                "Failed to delete journal entry:",
                 error
             );
 

@@ -365,12 +365,12 @@ Current routes include:
 
 ```text
 /
-/dashboard
-/support
-/journal
-/insights
-/safeplace
-/settings
+ /dashboard
+ /support
+ /journal
+ /insights
+ /safeplace
+ /settings
 ```
 
 Authentication pages include Login and Signup.

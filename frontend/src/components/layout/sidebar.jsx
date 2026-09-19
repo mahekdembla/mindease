@@ -10,12 +10,19 @@ import {
   faRightFromBracket,
   faShieldHeart,
 } from "@fortawesome/free-solid-svg-icons";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import CrisisModal from "../common/CrisisModal";
+import { logoutUser } from "../../services/api";
 
 function Sidebar() {
     const location = useLocation();
+    const navigate = useNavigate();
     const [openCrisis, setOpenCrisis] = useState(false);
+
+    const handleLogout = async () => {
+        await logoutUser();
+        navigate("/login");
+    };
 
     const menuItems = [
         {
@@ -99,8 +106,8 @@ function Sidebar() {
                 </nav>
             </div>
 
-            {/* Push Crisis Support to Bottom */}
-            <div className="mt-auto p-4">
+            {/* Push Crisis Support & Logout to Bottom */}
+            <div className="mt-auto p-4 space-y-2">
 
                 {/* Crisis Support */}
                 <div
@@ -126,6 +133,27 @@ function Sidebar() {
 
                     Crisis Support
                 </div>
+
+                {/* Logout Button */}
+                <button
+                    onClick={handleLogout}
+                    className="
+                        w-full
+                        text-textSecondary
+                        hover:text-red-600
+                        hover:bg-red-50
+                        p-3
+                        rounded-xl
+                        flex
+                        items-center
+                        gap-3
+                        transition-all
+                        font-medium
+                    "
+                >
+                    <FontAwesomeIcon icon={faRightFromBracket} />
+                    Logout
+                </button>
             </div>
 
             {/* Crisis Modal */}

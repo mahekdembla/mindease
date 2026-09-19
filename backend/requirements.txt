@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+pymongo
+dnspython
+python-dotenv
+pydantic
+transformers
+torch
+sentence-transformers
+groq
+pyjwt
+passlib[bcrypt]
+bcrypt
+requests
+
