@@ -532,6 +532,7 @@ function Settings() {
 </div>
 
             </div>
+        
     );
 }
 
