@@ -33,30 +33,51 @@ class MongoDBManager:
             return False
 
         try:
-            # Reusable MongoClient with 5s timeout
-            self.client = MongoClient(
-                mongodb_uri,
-                serverSelectionTimeoutMS=5000,
-                connectTimeoutMS=5000
-            )
-            # Verify connectivity via admin ping
+            # Attempt 1: Standard connection (with certifi CA if available)
+            client_kwargs = {
+                "serverSelectionTimeoutMS": 5000,
+                "connectTimeoutMS": 5000
+            }
+            try:
+                import certifi
+                client_kwargs["tlsCAFile"] = certifi.where()
+            except ImportError:
+                pass
+
+            self.client = MongoClient(mongodb_uri, **client_kwargs)
             if self.client is not None:
                 self.client.admin.command("ping")
                 self.db = self.client[db_name]
                 self._is_connected = True
                 logger.info(f"Successfully connected to MongoDB database: {db_name}")
-
-                # Ensure indexes safely
                 self.ensure_indexes()
                 return True
             return False
 
         except Exception as e:
-            logger.error(f"Failed to connect to MongoDB: {type(e).__name__} - {e}")
-            self._is_connected = False
-            self.client = None
-            self.db = None
-            return False
+            logger.warning(f"Initial MongoDB connection failed ({e}). Attempting TLS fallback...")
+            try:
+                # Attempt 2: TLS Fallback for Windows SSL Store certificate verification issues
+                self.client = MongoClient(
+                    mongodb_uri,
+                    serverSelectionTimeoutMS=5000,
+                    connectTimeoutMS=5000,
+                    tlsAllowInvalidCertificates=True
+                )
+                if self.client is not None:
+                    self.client.admin.command("ping")
+                    self.db = self.client[db_name]
+                    self._is_connected = True
+                    logger.info(f"Successfully connected to MongoDB database (TLS fallback): {db_name}")
+                    self.ensure_indexes()
+                    return True
+                return False
+            except Exception as fallback_err:
+                logger.error(f"Failed to connect to MongoDB: {type(fallback_err).__name__} - {fallback_err}")
+                self._is_connected = False
+                self.client = None
+                self.db = None
+                return False
 
     def close_db(self):
         """Close MongoDB client connection on shutdown."""

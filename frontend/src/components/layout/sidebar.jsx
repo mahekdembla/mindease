@@ -9,6 +9,7 @@ import {
   faCircleExclamation,
   faRightFromBracket,
   faShieldHeart,
+  faWandMagicSparkles,
 } from "@fortawesome/free-solid-svg-icons";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import CrisisModal from "../common/CrisisModal";
@@ -45,7 +46,12 @@ function Sidebar() {
             icon: faChartLine,
             path: "/insights",
         },
-       {
+        {
+            name: "Healing Space",
+            icon: faWandMagicSparkles,
+            path: "/healing",
+        },
+        {
              name: "Safe Place",
              icon: faShieldHeart,
               path: "/safeplace",

@@ -167,12 +167,16 @@ export async function fetchJournalEntries() {
     return await response.json();
 }
 
-export async function saveJournalEntry(text, mood) {
+export async function saveJournalEntry(entryData, moodArg = "") {
+    const payload = typeof entryData === "object" && entryData !== null
+        ? entryData
+        : { text: entryData, mood: moodArg };
+
     const response = await fetch(`${API_URL}/journal`, {
         method: "POST",
         headers: getAuthHeaders(),
         credentials: "include",
-        body: JSON.stringify({ text, mood }),
+        body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
@@ -182,12 +186,16 @@ export async function saveJournalEntry(text, mood) {
     return await response.json();
 }
 
-export async function updateJournalEntry(id, text, mood) {
+export async function updateJournalEntry(id, entryData, moodArg = "") {
+    const payload = typeof entryData === "object" && entryData !== null
+        ? entryData
+        : { text: entryData, mood: moodArg };
+
     const response = await fetch(`${API_URL}/journal/${id}`, {
         method: "PUT",
         headers: getAuthHeaders(),
         credentials: "include",
-        body: JSON.stringify({ text, mood }),
+        body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
@@ -206,6 +214,53 @@ export async function deleteJournalEntry(id) {
 
     if (!response.ok) {
         throw new Error("Failed to delete journal entry");
+    }
+
+    return await response.json();
+}
+
+export async function fetchInsights(view = "weekly") {
+    const response = await fetch(`${API_URL}/insights?view=${encodeURIComponent(view)}`, {
+        method: "GET",
+        headers: getAuthHeaders(),
+        credentials: "include",
+    });
+
+    if (!response.ok) {
+        throw new Error("Failed to fetch insights");
+    }
+
+    return await response.json();
+}
+
+export async function fetchDashboard() {
+    const response = await fetch(`${API_URL}/dashboard`, {
+        method: "GET",
+        headers: getAuthHeaders(),
+        credentials: "include",
+    });
+
+    if (!response.ok) {
+        throw new Error("Failed to fetch dashboard data");
+    }
+
+    return await response.json();
+}
+
+export async function saveMoodCheckin(core_emotion, specific_feeling = null, granular_feeling = null) {
+    const response = await fetch(`${API_URL}/mood-checkin`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        credentials: "include",
+        body: JSON.stringify({
+            core_emotion,
+            specific_feeling,
+            granular_feeling
+        }),
+    });
+
+    if (!response.ok) {
+        throw new Error("Failed to save mood check-in");
     }
 
     return await response.json();

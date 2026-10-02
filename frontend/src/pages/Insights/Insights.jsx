@@ -10,702 +10,298 @@ import {
     Pie,
     Cell,
 } from "recharts";
+import { fetchInsights } from "../../services/api";
 
 function Insights() {
-    const [entries, setEntries] = useState([]);
-    const [chatHistory, setChatHistory] = useState([]);
     const [view, setView] = useState("weekly");
     const [isLoading, setIsLoading] = useState(true);
-
-    // =========================
-    // MOOD SCORES
-    // =========================
-
-    const moodScore = {
-        "😊 Happy": 8,
-        "😌 Calm": 7,
-        "😟 Anxious": 5,
-        "😢 Sad": 4,
-        "😫 Stressed": 3,
-    };
-
-    // =========================
-    // LOAD DATA
-    // =========================
+    const [insightsData, setInsightsData] = useState(null);
 
     useEffect(() => {
+        let isMounted = true;
         const loadInsightsData = async () => {
+            setIsLoading(true);
             try {
-                const [journalResponse, chatResponse] =
-                    await Promise.all([
-                        fetch("http://127.0.0.1:8000/journal"),
-                        fetch("http://127.0.0.1:8000/chat-history"),
-                    ]);
-
-                if (!journalResponse.ok) {
-                    throw new Error("Failed to load journal data");
+                const data = await fetchInsights(view);
+                if (isMounted) {
+                    setInsightsData(data);
                 }
-
-                if (!chatResponse.ok) {
-                    throw new Error("Failed to load chat data");
-                }
-
-                const journalData =
-                    await journalResponse.json();
-
-                const chatData =
-                    await chatResponse.json();
-
-                setEntries(journalData);
-                setChatHistory(chatData);
-
             } catch (error) {
-                console.error(
-                    "Failed to load insights:",
-                    error
-                );
+                console.error("Failed to load insights:", error);
             } finally {
-                setIsLoading(false);
+                if (isMounted) {
+                    setIsLoading(false);
+                }
             }
         };
 
         loadInsightsData();
-    }, []);
+        return () => {
+            isMounted = false;
+        };
+    }, [view]);
 
-    // =========================
-    // DATE HELPER
-    // =========================
-
-    const getDate = (item) => {
-        const date = new Date(item.time || item.date);
-
-        return isNaN(date.getTime())
-            ? null
-            : date;
+    const EMOTION_COLORS = {
+        Happy: "#81C784",
+        Positive: "#81C784",
+        Calm: "#64B5F6",
+        Balanced: "#4DD0E1",
+        Sad: "#9FA8DA",
+        Anxious: "#FFD54F",
+        Fear: "#FFB74D",
+        Stressed: "#E57373",
+        Anger: "#EF5350",
+        Crisis: "#BA68C8",
     };
 
-    // =========================
-    // CURRENT DATE
-    // =========================
-
-    const now = new Date();
-
-    /*
-     * Weekly = last 7 days including today
-     *
-     * Monthly = last 32 days including today
-     *
-     * This means:
-     * If today is Aug 9:
-     * Monthly starts on Jul 9
-     * and ends on Aug 9.
-     */
-
-    const daysToShow =
-        view === "weekly"
-            ? 7
-            : 32;
-
-    // =========================
-    // START DATE
-    // =========================
-
-    const startDate = new Date(now);
-
-    startDate.setDate(
-        now.getDate() - (daysToShow - 1)
-    );
-
-    startDate.setHours(0, 0, 0, 0);
-
-    // =========================
-    // END DATE
-    // =========================
-
-    const endDate = new Date(now);
-
-    endDate.setHours(
-        23,
-        59,
-        59,
-        999
-    );
-
-    // =========================
-    // FILTER ENTRIES
-    // =========================
-
-    const filteredEntries = entries.filter(
-        (entry) => {
-            const date = getDate(entry);
-
-            if (!date) {
-                return false;
-            }
-
-            return (
-                date >= startDate &&
-                date <= endDate
-            );
-        }
-    );
-
-    // =========================
-    // DAILY CHART DATA
-    // =========================
-
-    const chartData = [];
-
-    for (
-        let i = 0;
-        i < daysToShow;
-        i++
-    ) {
-        const currentDate =
-            new Date(startDate);
-
-        currentDate.setDate(
-            startDate.getDate() + i
-        );
-
-        const year =
-            currentDate.getFullYear();
-
-        const month =
-            currentDate.getMonth();
-
-        const day =
-            currentDate.getDate();
-
-        const dayEntries =
-            filteredEntries.filter(
-                (entry) => {
-                    const entryDate =
-                        getDate(entry);
-
-                    if (!entryDate) {
-                        return false;
-                    }
-
-                    return (
-                        entryDate.getFullYear() ===
-                            year &&
-                        entryDate.getMonth() ===
-                            month &&
-                        entryDate.getDate() ===
-                            day
-                    );
-                }
-            );
-
-        let mood = null;
-
-        if (dayEntries.length > 0) {
-            const total =
-                dayEntries.reduce(
-                    (sum, entry) =>
-                        sum +
-                        (
-                            moodScore[
-                                entry.mood
-                            ] || 5
-                        ),
-                    0
-                );
-
-            mood =
-                total /
-                dayEntries.length;
-        }
-
-        chartData.push({
-            day: currentDate.toLocaleDateString(
-                "en-US",
-                {
-                    month: "short",
-                    day: "numeric",
-                }
-            ),
-            mood,
-        });
-    }
-
-    // =========================
-    // AVERAGE MOOD
-    // =========================
-
-    const avgMood =
-        filteredEntries.length > 0
-            ? (
-                filteredEntries.reduce(
-                    (sum, entry) =>
-                        sum +
-                        (
-                            moodScore[
-                                entry.mood
-                            ] || 5
-                        ),
-                    0
-                ) /
-                filteredEntries.length
-            ).toFixed(1)
-            : "0";
-
-    // =========================
-    // MOOD DISTRIBUTION
-    // =========================
-
-    const moodCount = {};
-
-    filteredEntries.forEach(
-        (entry) => {
-            if (!entry.mood) {
-                return;
-            }
-
-            moodCount[entry.mood] =
-                (moodCount[entry.mood] || 0) + 1;
-        }
-    );
-
-    const pieData =
-        Object.keys(moodCount).map(
-            (key) => ({
-                name: key,
-                value: moodCount[key],
-            })
-        );
-
-    const COLORS = [
-        "#A5D6A7",
-        "#FFE082",
-        "#90CAF9",
-        "#CE93D8",
-        "#EF9A9A",
+    const FALLBACK_COLORS = [
+        "#81C784",
+        "#FFD54F",
+        "#64B5F6",
+        "#BA68C8",
+        "#E57373",
+        "#FF8A65",
+        "#4DD0E1",
     ];
 
-    // =========================
-    // MOST COMMON MOOD
-    // =========================
-
-    const mostMood =
-        pieData.length > 0
-            ? pieData.reduce(
-                (a, b) =>
-                    a.value > b.value
-                        ? a
-                        : b
-            ).name
-            : "-";
-
-    // =========================
-    // AI CONVERSATIONS
-    // =========================
-
-    const chatCount =
-        chatHistory.length;
-
-    // =========================
-    // BEST DAY
-    // =========================
-
-    const bestEntry =
-        filteredEntries.length > 0
-            ? filteredEntries.reduce(
-                (best, current) => {
-                    const currentScore =
-                        moodScore[
-                            current.mood
-                        ] || 5;
-
-                    const bestScore =
-                        moodScore[
-                            best.mood
-                        ] || 5;
-
-                    return currentScore >
-                        bestScore
-                        ? current
-                        : best;
-                }
-            )
-            : null;
-
-    const bestDay = bestEntry
-        ? `${getDate(
-            bestEntry
-        ).toLocaleDateString(
-            "en-US",
-            {
-                month: "long",
-                day: "numeric",
-            }
-        )} (${moodScore[
-            bestEntry.mood
-        ] || 5}/10)`
-        : "-";
-
-    // =========================
-    // INSIGHT
-    // =========================
-
-    const getInsight = () => {
-        if (filteredEntries.length === 0) {
-            return "Start journaling to see personalized insights about your emotional wellbeing.";
-        }
-
-        if (mostMood.includes("Happy")) {
-            return "You've been feeling positive lately. Keep doing the things that bring you joy!";
-        }
-
-        if (mostMood.includes("Calm")) {
-            return "You've been maintaining a calm state recently. Keep making time for activities that help you relax.";
-        }
-
-        if (mostMood.includes("Anxious")) {
-            return "Anxiety appears frequently in your recent entries. Consider taking short breaks and practicing slow breathing.";
-        }
-
-        if (mostMood.includes("Stressed")) {
-            return "Stress appears frequently in your recent entries. Try giving yourself time to rest between tasks.";
-        }
-
-        if (mostMood.includes("Sad")) {
-            return "You've been feeling low recently. Writing about your thoughts can be a helpful way to process them.";
-        }
-
-        return "Keep tracking your emotions to better understand your wellbeing over time.";
-    };
-
-    // =========================
-    // LOADING
-    // =========================
 
     if (isLoading) {
         return (
-            <div className="p-8 w-full min-w-0 overflow-x-hidden">
-
-                <h1 className="text-3xl font-heading font-semibold text-textPrimary">
-                    Mood Insights
-                </h1>
-
-                <p className="text-textSecondary mt-2">
-                    Loading your insights...
-                </p>
-
+            <div className="p-6 sm:p-8 w-full min-h-screen bg-background relative overflow-y-auto">
+                <div className="w-full max-w-5xl mx-auto mb-6">
+                    <span className="text-xs uppercase tracking-wider font-semibold text-purple-700 bg-purple-100 px-3.5 py-1.5 rounded-full border border-purple-200">
+                        Mood & Growth Insights 📊
+                    </span>
+                </div>
+                <div className="max-w-5xl mx-auto w-full bg-white border border-border rounded-3xl p-8 shadow-xs text-center text-slate-500 text-sm">
+                    Loading your mood insights...
+                </div>
             </div>
         );
     }
 
+    const hasData = insightsData?.has_data ?? false;
+    const avgMood = insightsData?.average_mood ?? 0;
+    const journalCount = insightsData?.journal_count ?? 0;
+    const chatCount = insightsData?.chat_conversation_count ?? 0;
+    const chartData = insightsData?.chart_data ?? [];
+    const pieData = insightsData?.emotion_distribution ?? [];
+    const mostMood = insightsData?.most_common_mood ?? "-";
+    const bestDay = insightsData?.best_day ?? "-";
+    const insightSummary = insightsData?.insight_summary || "Keep tracking your emotions to better understand your wellbeing over time.";
+
     return (
-        <div className="p-8 w-full min-w-0 overflow-x-hidden">
+        <div className="p-6 sm:p-8 w-full min-h-screen bg-background relative overflow-y-auto">
+            
+            {/* Top Navigation Badge */}
+            <div className="w-full max-w-5xl mx-auto flex items-center justify-between mb-6">
+                <span className="text-xs uppercase tracking-wider font-semibold text-purple-700 bg-purple-100 px-3.5 py-1.5 rounded-full border border-purple-200">
+                    Mood & Growth Insights 📊
+                </span>
+            </div>
 
-            {/* =========================
-                HEADER
-            ========================= */}
-
-            <div className="flex items-start justify-between gap-4 mb-8">
-
+            {/* Header Title Section */}
+            <div className="max-w-5xl mx-auto w-full mb-8 flex flex-wrap items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-heading font-semibold text-textPrimary">
+                    <h1 className="text-3xl sm:text-4xl font-heading font-bold text-textPrimary">
                         Mood Insights
                     </h1>
-
-                    <p className="text-textSecondary mt-1">
-                        Track your emotional wellbeing
+                    <p className="text-textSecondary text-sm sm:text-base leading-relaxed mt-1">
+                        Track your emotional wellbeing and review your reflection progress over time.
                     </p>
                 </div>
 
-                {/* Weekly / Monthly */}
-                <div className="flex gap-2 shrink-0">
-
+                {/* Weekly / Monthly Selector */}
+                <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-2xl border border-slate-200">
                     <button
-                        onClick={() =>
-                            setView("weekly")
-                        }
-                        className={`px-5 py-3 rounded-full transition ${
+                        onClick={() => setView("weekly")}
+                        className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                             view === "weekly"
-                                ? "bg-primary text-white"
-                                : "bg-gray-200 text-textPrimary"
+                                ? "bg-purple-600 text-white shadow-xs"
+                                : "text-slate-600 hover:text-slate-900"
                         }`}
                     >
                         Weekly
                     </button>
 
                     <button
-                        onClick={() =>
-                            setView("monthly")
-                        }
-                        className={`px-5 py-3 rounded-full transition ${
+                        onClick={() => setView("monthly")}
+                        className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                             view === "monthly"
-                                ? "bg-primary text-white"
-                                : "bg-gray-200 text-textPrimary"
+                                ? "bg-purple-600 text-white shadow-xs"
+                                : "text-slate-600 hover:text-slate-900"
                         }`}
                     >
                         Monthly
                     </button>
-
                 </div>
-
             </div>
 
-            {/* =========================
-                STAT CARDS
-            ========================= */}
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-
-                <div className="bg-card p-6 rounded-2xl border">
-                    <p className="text-textSecondary">
-                        Average Mood
-                    </p>
-
-                    <p className="text-4xl font-semibold text-primary mt-1">
-                        {avgMood}
-                    </p>
-
-                    <p className="text-textSecondary">
-                        out of 10
-                    </p>
-                </div>
-
-                <div className="bg-card p-6 rounded-2xl border">
-                    <p className="text-textSecondary">
-                        Journal Entries
-                    </p>
-
-                    <p className="text-4xl font-semibold text-primary mt-1">
-                        {filteredEntries.length}
-                    </p>
-                </div>
-
-                <div className="bg-card p-6 rounded-2xl border">
-                    <p className="text-textSecondary">
-                        AI Conversations
-                    </p>
-
-                    <p className="text-4xl font-semibold text-primary mt-1">
-                        {chatCount}
-                    </p>
-                </div>
-
-            </div>
-
-            {/* =========================
-                MOOD TREND
-            ========================= */}
-
-            <div className="bg-card p-6 rounded-2xl border mb-8 min-w-0">
-
-                <h2 className="text-xl font-semibold mb-6">
-                    Mood Trend
-                </h2>
-
-                {/* ONLY THIS AREA CAN SCROLL */}
-                <div className="w-full overflow-x-auto overflow-y-hidden">
-
-                    <div
-                        className={
-                            view === "monthly"
-                                ? "min-w-[1000px]"
-                                : "min-w-0 w-full"
-                        }
-                    >
-
-                        <ResponsiveContainer
-                            width="100%"
-                            height={300}
-                        >
-                            <LineChart
-                                data={chartData}
-                                margin={{
-                                    top: 10,
-                                    right: 20,
-                                    left: 10,
-                                    bottom: 10,
-                                }}
-                            >
-
-                                <XAxis
-                                    dataKey="day"
-                                    interval={
-                                        view === "monthly"
-                                            ? 2
-                                            : 0
-                                    }
-                                    tick={{
-                                        fill: "#666",
-                                    }}
-                                />
-
-                                <YAxis
-                                    domain={[0, 10]}
-                                    ticks={[
-                                        0,
-                                        3,
-                                        6,
-                                        10,
-                                    ]}
-                                />
-
-                                <Tooltip />
-
-                                <Line
-                                    type="monotone"
-                                    dataKey="mood"
-                                    stroke="#9466F2"
-                                    strokeWidth={3}
-                                    dot={{
-                                        r: 5,
-                                        strokeWidth: 3,
-                                        fill: "white",
-                                    }}
-                                    connectNulls={true}
-                                />
-
-                            </LineChart>
-                        </ResponsiveContainer>
-
+            {/* Main Enclosed Centered White Box Container */}
+            <div className="max-w-5xl mx-auto w-full bg-white border border-border rounded-3xl p-6 sm:p-8 shadow-xs space-y-8">
+                
+                {/* 1. Stat Metric Cards Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+                    <div className="bg-slate-50/70 border border-slate-200/80 p-5 rounded-2xl flex flex-col justify-between">
+                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                            Average Mood
+                        </p>
+                        <div className="my-2">
+                            <span className="text-3xl sm:text-4xl font-extrabold text-purple-700">
+                                {avgMood}
+                            </span>
+                            <span className="text-xs text-slate-500 ml-1 font-medium">/ 10</span>
+                        </div>
+                        <p className="text-[11px] text-slate-400">Based on recent entries</p>
                     </div>
 
+                    <div className="bg-slate-50/70 border border-slate-200/80 p-5 rounded-2xl flex flex-col justify-between">
+                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                            Journal Entries
+                        </p>
+                        <div className="my-2">
+                            <span className="text-3xl sm:text-4xl font-extrabold text-purple-700">
+                                {journalCount}
+                            </span>
+                        </div>
+                        <p className="text-[11px] text-slate-400">Total reflections logged</p>
+                    </div>
+
+                    <div className="bg-slate-50/70 border border-slate-200/80 p-5 rounded-2xl flex flex-col justify-between">
+                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                            AI Conversations
+                        </p>
+                        <div className="my-2">
+                            <span className="text-3xl sm:text-4xl font-extrabold text-purple-700">
+                                {chatCount}
+                            </span>
+                        </div>
+                        <p className="text-[11px] text-slate-400">Support sessions held</p>
+                    </div>
                 </div>
 
-            </div>
-
-            {/* =========================
-                BOTTOM CARDS
-            ========================= */}
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-
-                {/* Emotion Distribution */}
-
-                <div className="bg-card p-6 rounded-2xl border min-w-0 overflow-hidden">
-
-                    <h2 className="text-lg font-semibold mb-4">
-                        Emotion Distribution
+                {/* 2. Mood Trend Line Chart */}
+                <div className="bg-slate-50/50 border border-slate-200/80 p-5 sm:p-6 rounded-2xl">
+                    <h2 className="text-base font-bold text-textPrimary mb-4">
+                        Mood Trend
                     </h2>
 
-                    {pieData.length === 0 ? (
-
-                        <div className="h-[250px] flex items-center justify-center text-textSecondary">
-                            No mood data available.
-                        </div>
-
-                    ) : (
-
-                        <ResponsiveContainer
-                            width="100%"
-                            height={250}
-                        >
-
-                            <PieChart>
-
-                                <Pie
-                                    data={pieData}
-                                    dataKey="value"
-                                    outerRadius={90}
-                                    labelLine={true}
-                                    label={({
-                                        name,
-                                        percent,
-                                    }) =>
-                                        `${
-                                            name.replace(
-                                                /^.*?\s/,
-                                                ""
-                                            )
-                                        } ${(
-                                            percent * 100
-                                        ).toFixed(0)}%`
-                                    }
+                    <div className="w-full overflow-x-auto overflow-y-hidden">
+                        <div className={view === "monthly" ? "min-w-[700px]" : "w-full"}>
+                            <ResponsiveContainer width="100%" height={260}>
+                                <LineChart
+                                    data={chartData}
+                                    margin={{ top: 10, right: 20, left: -20, bottom: 0 }}
                                 >
+                                    <XAxis
+                                        dataKey="day"
+                                        interval={view === "monthly" ? 2 : 0}
+                                        tick={{ fill: "#64748B", fontSize: 12 }}
+                                    />
+                                    <YAxis
+                                        domain={[0, 10]}
+                                        ticks={[0, 3, 6, 10]}
+                                        tick={{ fill: "#64748B", fontSize: 12 }}
+                                    />
+                                    <Tooltip
+                                        contentStyle={{
+                                            backgroundColor: "#1E1B4B",
+                                            borderColor: "#4338CA",
+                                            borderRadius: "12px",
+                                            color: "#FFF",
+                                            fontSize: "12px",
+                                        }}
+                                    />
+                                    <Line
+                                        type="monotone"
+                                        dataKey="mood"
+                                        stroke="#9333EA"
+                                        strokeWidth={3}
+                                        dot={{
+                                            r: 5,
+                                            strokeWidth: 2,
+                                            fill: "#9333EA",
+                                            stroke: "#FFFFFF",
+                                        }}
+                                        connectNulls={true}
+                                    />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+                </div>
 
-                                    {pieData.map(
-                                        (_, index) => (
+                {/* 3. Bottom Cards: Distribution & Summary */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Emotion Distribution */}
+                    <div className="bg-slate-50/50 border border-slate-200/80 p-5 sm:p-6 rounded-2xl flex flex-col justify-between">
+                        <h2 className="text-base font-bold text-textPrimary mb-3">
+                            Emotion Distribution
+                        </h2>
+
+                        {!hasData || pieData.length === 0 ? (
+                            <div className="h-[200px] flex items-center justify-center text-slate-400 text-xs">
+                                No mood data available yet.
+                            </div>
+                        ) : (
+                            <ResponsiveContainer width="100%" height={200}>
+                                <PieChart>
+                                    <Pie
+                                        data={pieData}
+                                        dataKey="value"
+                                        outerRadius={75}
+                                        labelLine={false}
+                                        label={({ name, percent }) =>
+                                            `${name} ${(percent * 100).toFixed(0)}%`
+                                        }
+                                    >
+                                        {pieData.map((entry, index) => (
                                             <Cell
                                                 key={index}
-                                                fill={
-                                                    COLORS[
-                                                        index %
-                                                        COLORS.length
-                                                    ]
-                                                }
+                                                fill={EMOTION_COLORS[entry.name] || FALLBACK_COLORS[index % FALLBACK_COLORS.length]}
                                             />
-                                        )
-                                    )}
+                                        ))}
 
-                                </Pie>
-
-                            </PieChart>
-
-                        </ResponsiveContainer>
-
-                    )}
-
-                </div>
-
-                {/* Summary */}
-
-                <div className="bg-card p-6 rounded-2xl border flex flex-col justify-between h-full min-w-0 overflow-hidden">
-
-                    <h2 className="text-lg font-semibold mb-6">
-                        {view === "weekly"
-                            ? "Weekly Summary"
-                            : "Monthly Summary"}
-                    </h2>
-
-                    <div className="space-y-6">
-
-                        <div>
-                            <p className="text-sm text-textSecondary mb-1">
-                                Most Common Mood
-                            </p>
-
-                            <p className="text-base font-semibold">
-                                {mostMood}
-                            </p>
-                        </div>
-
-                        <div>
-                            <p className="text-sm text-textSecondary mb-1">
-                                Best Day
-                            </p>
-
-                            <p className="text-base font-semibold">
-                                {bestDay}
-                            </p>
-                        </div>
-
-                        <div>
-                            <p className="text-sm text-textSecondary mb-1">
-                                AI Conversations
-                            </p>
-
-                            <p className="text-base font-semibold">
-                                {chatCount}
-                            </p>
-                        </div>
-
+                                    </Pie>
+                                </PieChart>
+                            </ResponsiveContainer>
+                        )}
                     </div>
 
+                    {/* Summary Card */}
+                    <div className="bg-slate-50/50 border border-slate-200/80 p-5 sm:p-6 rounded-2xl flex flex-col justify-between">
+                        <h2 className="text-base font-bold text-textPrimary mb-4">
+                            {view === "weekly" ? "Weekly Summary" : "Monthly Summary"}
+                        </h2>
+
+                        <div className="space-y-4 text-xs sm:text-sm">
+                            <div className="flex items-center justify-between pb-2 border-b border-slate-200/60">
+                                <span className="text-slate-500 font-medium">Most Common Mood</span>
+                                <span className="font-bold text-purple-900">{mostMood}</span>
+                            </div>
+
+                            <div className="flex items-center justify-between pb-2 border-b border-slate-200/60">
+                                <span className="text-slate-500 font-medium">Best Day</span>
+                                <span className="font-bold text-purple-900">{bestDay}</span>
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                                <span className="text-slate-500 font-medium">AI Conversations</span>
+                                <span className="font-bold text-purple-900">{chatCount}</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-            </div>
-
-            {/* =========================
-                INSIGHT
-            ========================= */}
-
-            <div className="bg-primaryLight p-6 rounded-2xl w-full max-w-full overflow-hidden">
-
-                <h2 className="font-semibold mb-2">
-                    Insight
-                </h2>
-
-                <p className="text-textSecondary">
-                    {getInsight()}
-                </p>
+                {/* 4. Insight Summary Box */}
+                <div className="bg-purple-50 border border-purple-200/80 p-5 rounded-2xl">
+                    <h2 className="text-xs uppercase tracking-wider font-extrabold text-purple-900 mb-1">
+                        Personalized Insight
+                    </h2>
+                    <p className="text-xs sm:text-sm font-medium text-slate-700 leading-relaxed">
+                        {insightSummary}
+                    </p>
+                </div>
 
             </div>
 

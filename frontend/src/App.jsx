@@ -9,6 +9,7 @@ import Journal from "./pages/Journal/Journal";
 import Insights from "./pages/Insights/Insights";
 import Settings from "./pages/Settings/Settings";
 import SafePlace from "./pages/SafePlace/SafePlace";
+import HealingSpace from "./pages/Healing/HealingSpace";
 import Login from "./pages/Auth/Login";
 import Signup from "./pages/Auth/Signup";
 
@@ -18,13 +19,17 @@ function App() {
     const location = useLocation();
     const navigate = useNavigate();
 
-    const [user, setUser] = useState(null);
+    const [user, setUser] = useState(() => {
+        try {
+            const cached = localStorage.getItem("currentUser");
+            return cached ? JSON.parse(cached) : null;
+        } catch (e) {
+            return null;
+        }
+    });
+
     const [authChecked, setAuthChecked] = useState(false);
-
-    const [demoLocked, setDemoLocked] = useState(
-        localStorage.getItem("demoLocked") === "true"
-    );
-
+    const [demoLocked, setDemoLocked] = useState(false);
     const [showDemoPopup, setShowDemoPopup] = useState(false);
 
     const isLanding =
@@ -53,19 +58,26 @@ function App() {
                 if (currentUser) {
                     setUser(currentUser);
                     localStorage.setItem("currentUser", JSON.stringify(currentUser));
+                    
+                    // CRITICAL FIX: Authenticated user clears demo state completely
+                    localStorage.removeItem("demoStartedAt");
+                    localStorage.removeItem("demoLocked");
                     setDemoLocked(false);
                     setShowDemoPopup(false);
 
                     if (location.pathname === "/login" || location.pathname === "/signup") {
-                        navigate("/dashboard");
+                        const targetPath = location.state?.from || "/dashboard";
+                        navigate(targetPath, { replace: true });
                     }
                 } else {
                     setUser(null);
                     localStorage.removeItem("currentUser");
 
-                    const protectedRoutes = ["/dashboard", "/support", "/journal", "/insights", "/settings", "/safeplace"];
-                    if (protectedRoutes.includes(location.pathname)) {
-                        navigate("/login");
+                    const isDemoActive = !!localStorage.getItem("demoStartedAt") && localStorage.getItem("demoLocked") !== "true";
+
+                    const protectedRoutes = ["/dashboard", "/support", "/journal", "/insights", "/healing", "/healing-space", "/settings", "/safeplace"];
+                    if (protectedRoutes.includes(location.pathname) && !isDemoActive) {
+                        navigate("/login", { state: { from: location.pathname } });
                     }
                 }
             } catch (err) {
@@ -79,18 +91,27 @@ function App() {
     }, [location.pathname]);
 
     // =========================
-    // 3 MINUTE DEMO TIMER
+    // 3 MINUTE DEMO TIMER (UNAUTHENTICATED ONLY)
     // =========================
 
     useEffect(() => {
-        if (user) {
+        // Authenticated users never trigger demo locks or popups
+        const hasToken = !!localStorage.getItem("mindease_token");
+        if (user || hasToken) {
             setDemoLocked(false);
             setShowDemoPopup(false);
+            localStorage.removeItem("demoStartedAt");
+            localStorage.removeItem("demoLocked");
             return;
         }
 
         const demoStartedAt = localStorage.getItem("demoStartedAt");
-        if (!demoStartedAt) return;
+        if (!demoStartedAt) {
+            setDemoLocked(false);
+            setShowDemoPopup(false);
+            localStorage.removeItem("demoLocked");
+            return;
+        }
 
         if (localStorage.getItem("demoLocked") === "true") {
             setDemoLocked(true);
@@ -123,11 +144,17 @@ function App() {
 
     const handleDemoLogin = () => {
         setShowDemoPopup(false);
+        setDemoLocked(false);
+        localStorage.removeItem("demoStartedAt");
+        localStorage.removeItem("demoLocked");
         navigate("/login");
     };
 
     const handleDemoSignup = () => {
         setShowDemoPopup(false);
+        setDemoLocked(false);
+        localStorage.removeItem("demoStartedAt");
+        localStorage.removeItem("demoLocked");
         navigate("/signup");
     };
 
@@ -135,7 +162,7 @@ function App() {
         <div className="min-h-screen bg-background overflow-x-hidden flex flex-col">
 
             {/* Top Navigation Bar */}
-            {!isLanding && <Navbar onLogout={() => setUser(null)} />}
+            {!isLanding && <Navbar user={user} onLogout={() => setUser(null)} />}
 
             {/* Main Content Area */}
             <main className="flex-1 min-w-0 w-full overflow-x-hidden">
@@ -143,7 +170,7 @@ function App() {
 
                     <Route
                         path="/"
-                        element={<Landing />}
+                        element={<Landing user={user} />}
                     />
 
                     <Route
@@ -167,13 +194,30 @@ function App() {
                     />
 
                     <Route
+                        path="/healing"
+                        element={<HealingSpace />}
+                    />
+
+                    <Route
+                        path="/healing-space"
+                        element={<HealingSpace />}
+                    />
+
+                    <Route
                         path="/settings"
                         element={<Settings />}
                     />
-                     <Route
+
+                    <Route
                         path="/safeplace"
                         element={<SafePlace />}
-                     />
+                    />
+
+                    <Route
+                        path="/safe-place"
+                        element={<SafePlace />}
+                    />
+
                     <Route
                         path="/login"
                         element={<Login />}
@@ -188,10 +232,10 @@ function App() {
             </main>
 
             {/* =========================
-                DEMO EXPIRED POPUP
+                DEMO EXPIRED POPUP (GUESTS ONLY)
             ========================= */}
 
-            {showDemoPopup && !user && (
+            {showDemoPopup && !user && !localStorage.getItem("mindease_token") && (
                 <div
                     className="
                         fixed inset-0 z-[999]
@@ -215,7 +259,6 @@ function App() {
                     >
 
                         {/* Icon */}
-
                         <div
                             className="
                                 w-16 h-16
@@ -231,7 +274,6 @@ function App() {
                         </div>
 
                         {/* Heading */}
-
                         <h2
                             className="
                                 text-2xl
@@ -245,7 +287,6 @@ function App() {
                         </h2>
 
                         {/* Message */}
-
                         <p
                             className="
                                 text-textSecondary
@@ -253,24 +294,11 @@ function App() {
                                 mb-6
                             "
                         >
-                            We hope you enjoyed
-                            exploring MindEase!
-                            Create an account or
-                            log in to continue
-                            using your personalized
-                            mental wellness space.
+                            We hope you enjoyed exploring MindEase! Create an account or log in to continue using your personalized mental wellness space.
                         </p>
 
                         {/* Buttons */}
-
-                        <div
-                            className="
-                                flex flex-col gap-3
-                            "
-                        >
-
-                            {/* Login */}
-
+                        <div className="flex flex-col gap-3">
                             <button
                                 onClick={handleDemoLogin}
                                 className="
@@ -290,8 +318,6 @@ function App() {
                                 Log In
                             </button>
 
-                            {/* Create Account */}
-
                             <button
                                 onClick={handleDemoSignup}
                                 className="
@@ -310,7 +336,6 @@ function App() {
                             >
                                 Create Account
                             </button>
-
                         </div>
 
                     </div>
