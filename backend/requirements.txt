@@ -12,4 +12,5 @@ pyjwt
 passlib[bcrypt]
 bcrypt
 requests
+beautifulsoup4
 
