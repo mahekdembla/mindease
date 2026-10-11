@@ -41,6 +41,47 @@ def verify_url_accessibility(url: str, timeout: int = 3) -> bool:
         return False
 
 
+# ---- link checks: parallel, remembered, and never run while a visitor waits ----
+import threading, time
+from concurrent.futures import ThreadPoolExecutor
+
+_URL_CHECK_CACHE: Dict[str, tuple] = {}      # url -> (is_ok, checked_at)
+_URL_CHECK_TTL = 12 * 3600
+_URL_CHECK_LOCK = threading.Lock()
+_URL_CHECK_PENDING = set()
+_PURGED_CATEGORIES = set()                    # legacy-cleanup already done for these categories
+_SEEDED = False                               # default content already written to MongoDB
+
+
+def _url_check_is_fresh(url: str) -> bool:
+    entry = _URL_CHECK_CACHE.get(url)
+    return entry is not None and time.time() - entry[1] < _URL_CHECK_TTL
+
+
+def _check_urls_in_background(urls) -> None:
+    with _URL_CHECK_LOCK:
+        todo = [u for u in dict.fromkeys(urls) if u and u not in _URL_CHECK_PENDING and not _url_check_is_fresh(u)]
+        _URL_CHECK_PENDING.update(todo)
+    if not todo:
+        return
+
+    def run():
+        try:
+            with ThreadPoolExecutor(max_workers=8) as pool:
+                for url, ok in zip(todo, pool.map(verify_url_accessibility, todo)):
+                    _URL_CHECK_CACHE[url] = (ok, time.time())
+        finally:
+            with _URL_CHECK_LOCK:
+                _URL_CHECK_PENDING.difference_update(todo)
+
+    threading.Thread(target=run, daemon=True).start()
+
+
+def _is_url_ok(url: str) -> bool:
+    entry = _URL_CHECK_CACHE.get(url)
+    return True if entry is None else entry[0]   # not checked yet -> assume fine
+
+
 # ==============================================================================
 # CURATED CHILDHOOD WISDOM & MORAL FABLES SEED DATASET (12 Mood Categories)
 # ==============================================================================
@@ -467,12 +508,14 @@ def get_all_content_items(category: str, mood: Optional[str] = None) -> List[Dic
             content_collection = db["content"]
 
             # Purge old legacy story entries that lacked mood_icon, had broken links, or removed stories
-            content_collection.delete_many({
-                "$or": [
-                    {"id": {"$in": ["story_1", "story_2", "story_3", "story_overthinking", "story_burnout", "story_sad", "story_anxious", "story_angry", "story_lonely", "story_jealous", "story_happy", "article_1", "article_2", "article_3"]}},
-                    {"category": category, "mood_icon": {"$exists": False}},
-                ]
-            })
+            if category not in _PURGED_CATEGORIES:
+                content_collection.delete_many({
+                    "$or": [
+                        {"id": {"$in": ["story_1", "story_2", "story_3", "story_overthinking", "story_burnout", "story_sad", "story_anxious", "story_angry", "story_lonely", "story_jealous", "story_happy", "article_1", "article_2", "article_3"]}},
+                        {"category": category, "mood_icon": {"$exists": False}},
+                    ]
+                })
+                _PURGED_CATEGORIES.add(category)
 
             query = {"category": category}
             if mood and mood != "all":
@@ -498,9 +541,10 @@ def get_all_content_items(category: str, mood: Optional[str] = None) -> List[Dic
 
     # Dynamic Background Link Accessibility Check
     fallback_verified_url = "https://en.wikipedia.org/wiki/Mental_health" if category == "article" else "https://en.wikipedia.org/wiki/Panchatantra"
+    _check_urls_in_background([i.get("original_url", "") for i in items])
     for item in items:
         orig_url = item.get("original_url", "")
-        if orig_url and not verify_url_accessibility(orig_url):
+        if orig_url and not _is_url_ok(orig_url):
             logger.info(f"URL {orig_url} failed accessibility check. Substituting with verified reference URL.")
             item["original_url"] = fallback_verified_url
             item["source_name"] = "Wikipedia Health Archives" if category == "article" else "Panchatantra Archives"
@@ -508,46 +552,31 @@ def get_all_content_items(category: str, mood: Optional[str] = None) -> List[Dic
     return items
 
 
-def seed_default_content() -> bool:
+def seed_default_content(force: bool = False) -> bool:
     """
-    Purges outdated documents from MongoDB and seeds clean moral fables, articles, and book models.
+    Writes the default stories, articles and books to MongoDB.
+    Runs once per server start (force=True to run again), using one bulk request instead of one per item.
     """
+    global _SEEDED
+    if _SEEDED and not force:
+        return True
+
     db = db_manager.db
     if not db_manager.is_connected() or db is None:
         return False
 
     try:
+        from pymongo import UpdateOne
         content_collection = db["content"]
-
-        # Insert clean moral stories
-        for item in DEFAULT_STORIES:
-            content_collection.update_one(
-                {"id": item["id"]},
-                {"$set": dict(item)},
-                upsert=True
-            )
-
-        # Insert clean health articles
-        for item in DEFAULT_ARTICLES:
-            content_collection.update_one(
-                {"id": item["id"]},
-                {"$set": dict(item)},
-                upsert=True
-            )
-
-        # Insert default book recommendations (extensible model)
-        for item in DEFAULT_BOOKS:
-            content_collection.update_one(
-                {"id": item["id"]},
-                {"$set": dict(item)},
-                upsert=True
-            )
-        
+        ops = [
+            UpdateOne({"id": item["id"]}, {"$set": dict(item)}, upsert=True)
+            for item in DEFAULT_STORIES + DEFAULT_ARTICLES + DEFAULT_BOOKS
+        ]
+        content_collection.bulk_write(ops, ordered=False)
+        _SEEDED = True
         logger.info("Successfully synced distinct Stories, Articles, and Book models in MongoDB.")
         return True
     except Exception as e:
-        logger.error(f"Error seeding default content: {e}")
-        return False
         logger.error(f"Error seeding default content: {e}")
         return False
 

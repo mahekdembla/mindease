@@ -1,6 +1,6 @@
 fastapi
-uvicorn
-pymongo
+uvicorn[standard]
+pymongo[srv]
 dnspython
 python-dotenv
 pydantic
@@ -13,4 +13,5 @@ passlib[bcrypt]
 bcrypt
 requests
 beautifulsoup4
-
+certifi
+numpy

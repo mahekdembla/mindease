@@ -1,4 +1,7 @@
-const API_URL = "http://127.0.0.1:8000";
+// In development this defaults to http://127.0.0.1:8000.
+// For production, set VITE_API_URL in your Vercel / Netlify environment to your
+// Render / Railway backend URL (e.g. https://mindease-backend.onrender.com).
+const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
 function getAuthHeaders() {
     const headers = {

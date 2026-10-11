@@ -1,16 +1,17 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { signupUser } from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
 
 function Signup() {
     const navigate = useNavigate();
+    const { signup } = useAuth();
 
-    const [name, setName] = useState("");
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
+    const [name, setName]                       = useState("");
+    const [email, setEmail]                     = useState("");
+    const [password, setPassword]               = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
-    const [isLoading, setIsLoading] = useState(false);
-    const [errorMessage, setErrorMessage] = useState("");
+    const [isLoading, setIsLoading]             = useState(false);
+    const [errorMessage, setErrorMessage]       = useState("");
 
     const handleSignup = async (e) => {
         e.preventDefault();
@@ -26,12 +27,14 @@ function Signup() {
             return;
         }
 
+        if (password.length < 6) {
+            setErrorMessage("Password must be at least 6 characters.");
+            return;
+        }
+
         setIsLoading(true);
         try {
-            const data = await signupUser(name, email, password);
-            if (data && data.user) {
-                localStorage.setItem("currentUser", JSON.stringify(data.user));
-            }
+            await signup(name, email, password);
             navigate("/dashboard");
         } catch (error) {
             setErrorMessage(error.message || "An account with this email already exists.");
@@ -116,7 +119,7 @@ function Signup() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Create a password"
+                placeholder="Create a password (min. 6 chars)"
                 className="w-full px-4 py-3 border border-border rounded-xl
                             focus:outline-none focus:ring-2 focus:ring-primary"
                 />

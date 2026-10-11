@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { loginUser } from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
 
 function Login() {
     const navigate = useNavigate();
     const location = useLocation();
+    const { login } = useAuth();
 
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [isLoading, setIsLoading] = useState(false);
+    const [email, setEmail]           = useState("");
+    const [password, setPassword]     = useState("");
+    const [isLoading, setIsLoading]   = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
 
     const handleLogin = async (e) => {
@@ -22,16 +23,13 @@ function Login() {
 
         setIsLoading(true);
         try {
-            const data = await loginUser(email, password);
-            if (data && data.user) {
-                localStorage.setItem("currentUser", JSON.stringify(data.user));
-            }
-            
-            // Clear demo session state upon real login
+            await login(email, password);
+
+            // Clear any leftover demo session markers.
             localStorage.removeItem("demoStartedAt");
             localStorage.removeItem("demoLocked");
 
-            // Navigate to original protected destination if available
+            // Navigate to original protected destination, or dashboard.
             const targetPath = location.state?.from || "/dashboard";
             navigate(targetPath, { replace: true });
         } catch (error) {

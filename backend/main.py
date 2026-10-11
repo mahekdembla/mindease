@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import re
 import secrets
 from datetime import datetime, timedelta
 import smtplib
@@ -40,6 +41,8 @@ from auth import (
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     db_manager.connect_db()
+    if os.environ.get("WARM_UP_MODELS", "1") == "1":
+        _warm_up_models()
     yield
     db_manager.close_db()
 
@@ -83,16 +86,16 @@ def get_emotion_model():
             try:
                 print(f"Loading local emotion model from: {LOCAL_EMOTION_PATH}")
                 _emotion_model = pipeline(
-                    "text-classification",
+                    "text-classification", truncation=True, max_length=128,
                     model=LOCAL_EMOTION_PATH,
                     tokenizer=LOCAL_EMOTION_PATH,
                     top_k=3
                 )
             except Exception:
-                _emotion_model = pipeline("text-classification", model=HUB_EMOTION_MODEL, top_k=3)
+                _emotion_model = pipeline("text-classification", truncation=True, max_length=128, model=HUB_EMOTION_MODEL, top_k=3)
         else:
             print(f"Loading emotion model ({HUB_EMOTION_MODEL})...")
-            _emotion_model = pipeline("text-classification", model=HUB_EMOTION_MODEL, top_k=3)
+            _emotion_model = pipeline("text-classification", truncation=True, max_length=128, model=HUB_EMOTION_MODEL, top_k=3)
     return _emotion_model
 
 def get_mental_model():
@@ -104,19 +107,21 @@ def get_mental_model():
             try:
                 print(f"Loading local risk model from: {LOCAL_RISK_PATH}")
                 _mental_model = pipeline(
-                    "text-classification",
+                    "text-classification", truncation=True, max_length=128,
                     model=LOCAL_RISK_PATH,
                     tokenizer=LOCAL_RISK_PATH
                 )
             except Exception:
-                _mental_model = pipeline("text-classification", model=HUB_RISK_MODEL)
+                _mental_model = pipeline("text-classification", truncation=True, max_length=128, model=HUB_RISK_MODEL)
         else:
             print(f"Loading risk model ({HUB_RISK_MODEL})...")
-            _mental_model = pipeline("text-classification", model=HUB_RISK_MODEL)
+            _mental_model = pipeline("text-classification", truncation=True, max_length=128, model=HUB_RISK_MODEL)
     return _mental_model
 
 def get_safety_model():
     global _safety_model
+    if os.environ.get("DISABLE_SAFETY_MODEL") == "1":
+        return None  # skip the slow zero-shot model; keywords + fine-tuned classifier still decide
     if _safety_model is None:
         try:
             print("Loading safety model (cross-encoder/nli-distilroberta-base)...")
@@ -131,6 +136,23 @@ def get_safety_model():
     return _safety_model
 
 print("Backend initialization complete (models configured for on-demand loading).")
+
+
+def _warm_up_models():
+    """Load every model once at startup so the first chat message is not slow."""
+    import time as _t
+    t0 = _t.perf_counter()
+    try:
+        evaluate_safety("hello")        # loads the risk classifier (and the zero-shot model unless disabled)
+        get_emotion_model()("hello")    # loads the emotion model
+        try:
+            from rag import retrieve
+            retrieve("hello")           # loads the sentence-embedding model
+        except Exception:
+            pass
+        print(f"[warm-up] models ready in {_t.perf_counter() - t0:.1f}s", flush=True)
+    except Exception as e:
+        print(f"[warm-up] skipped: {e}", flush=True)
 
 
 # REQUEST MODELS
@@ -527,92 +549,224 @@ def map_emotion(label):
         return "neutral"
 
 
+# MENTAL-STATE NORMALISATION
+# The fine-tuned risk classifier (training/models/risk-classifier) outputs
+# Anxiety / Depression / Normal / Suicidal, while the Hub fallback model outputs
+# sadness / anger / fear / joy / love / surprise. generate_response() and the LLM
+# prompt expect the second vocabulary, so map the first onto it. The RAW label is
+# still what the API returns and what gets stored in the database.
+
+RISK_LABEL_TO_STATE = {
+    "depression": "sadness",
+    "anxiety": "fear",
+    "normal": "neutral",
+    "suicidal": "severe distress",
+}
+
+def normalize_mental_state(label):
+    if not label:
+        return "neutral"
+    key = str(label).strip().lower()
+    return RISK_LABEL_TO_STATE.get(key, key)
+
+
+# EMOTION CORRECTION
+# The emotion classifier sometimes tags clearly negative messages as positive or
+# neutral (e.g. "I got into a fight with my best friend" -> joy). If the message
+# contains an unmistakable negative cue, override the label. Cues are matched at
+# word starts and skipped when negated ("not sad", "isn't sad", "no longer sad").
+
+NEGATIVE_CUES = {
+    "anger": ["fight", "fought", "argument", "argued", "yelled", "angry", "furious",
+              "annoyed", "betrayed"],
+    "anxiety": ["anxious", "worried", "scared", "afraid", "nervous", "panic",
+                "can't sleep", "cant sleep"],
+    "negative": ["hard day", "bad day", "rough day", "tough day", "terrible day",
+                 "sad", "lonely", "crying", "cried", "upset", "hurt", "broke up",
+                 "breakup", "failed", "exhausted", "miserable", "stressed",
+                 "overwhelmed", "passed away", "lost my"],
+}
+
+def correct_emotion_with_cues(emotion, user_text):
+    if emotion not in ("positive", "neutral"):
+        return emotion
+    t = user_text.lower().replace("\u2019", "'")
+    for corrected, cues in NEGATIVE_CUES.items():
+        for cue in cues:
+            if re.search(r"(?<!not )(?<!n't )(?<!no longer )\b" + re.escape(cue), t):
+                return corrected
+    return emotion
+
+
 # RESPONSE GENERATION
 
-def generate_response(emotion, mental_state, user_text):
-    llm_reply = generate_llm_response(user_text, emotion, mental_state)
+def generate_response(emotion, mental_state, user_text, history=None):
+    llm_reply = generate_llm_response(user_text, emotion, mental_state, history)
     if llm_reply:
         return llm_reply
 
-    if mental_state == "sadness":
-        return "I'm really sorry you're feeling low. Do you want to talk about what's been bothering you?"
-    elif mental_state == "anger":
-        return "It sounds like something is frustrating you. Would you like to share more?"
-    elif mental_state == "fear":
-        return "I understand you're feeling anxious. What's making you feel this way?"
+    # Fallback templates, used only when the LLM is unavailable. They key off `emotion`
+    # (the app's 5-class mood label), which is reliable with both the fine-tuned and hub models.
+    if emotion == "negative":
+        return "I'm sorry things feel heavy right now. What's been weighing on you the most?"
+    elif emotion == "anger":
+        return "That sounds really frustrating. What happened?"
+    elif emotion == "anxiety":
+        return "That sounds stressful. What's been on your mind the most?"
     elif emotion == "positive":
-        return "That's great to hear 😊 What made you feel this way today?"
+        return "That's lovely to hear 😊 What made today feel good?"
     else:
-        return "I'm here for you. Tell me more about what's on your mind."
+        return "I'm here and listening. What's on your mind?"
 
 
 # SAFETY DETECTION
 
+# Unambiguous self-harm / suicide language: always HIGH, regardless of context.
+STRONG_DANGER_PATTERNS = [
+    r"\bkill(?:ing)? myself\b",
+    r"\bend(?:ing)? my (?:own )?life\b",
+    r"\btake my own life\b",
+    r"\bwant(?:ed|s)? to die\b",
+    r"\bwanna die\b",
+    r"\bwish i (?:was|were) dead\b",
+    r"\bbetter off dead\b",
+    r"\b(?:don't|dont|do not) want to (?:live|be alive|be here)\b",
+    r"\bno reason to live\b",
+    r"\bend it all\b",
+    r"\b(?:hurt(?:ing)?|harm(?:ing)?|cut(?:ting)?|hang(?:ing)?) myself\b",
+    r"\bsuicidal\b",
+]
+
+# Words that can appear in non-personal talk ("a movie about suicide"): HIGH only
+# when the message is also about the speaker.
+AMBIGUOUS_DANGER_PATTERNS = [
+    r"\bsuicide\b",
+    r"\boverdos(?:e|ing)\b",
+    r"\bself[- ]?harm\b",
+]
+
+# Figures of speech that should not trigger the crisis flow.
+DIE_IDIOMS = (r"\bto die (?:of|from) (?:embarrassment|shame|laughter|boredom)\b"
+              r"|\bdie laughing\b"
+              r"|\bdying (?:of|from) (?:embarrassment|shame|laughter|boredom)\b")
+
+FIRST_PERSON = r"\b(?:i|i'm|im|i've|ive|i'll|my|me|myself)\b"
+
+# Talk about fiction/media with no reference to the speaker is not a risk signal.
+FICTION_CONTEXTS = ["movie", "film", "book", "novel", "character", "song"]
+
+# Strong distress wording: floors the level at MEDIUM even if the model says safe.
+STRONG_DISTRESS_KEYWORDS = ["hopeless", "can't go on", "cant go on", "can't take it anymore",
+                            "cant take it anymore", "no way out", "worthless", "give up on life"]
+
+# Weaker wording, only used when the safety model could not be loaded.
+FALLBACK_DISTRESS_KEYWORDS = ["overwhelmed", "breakdown", "panicking", "depressed"]
+
+def _risk(level, confidence):
+    return {
+        "riskLevel": level,
+        "confidence": confidence,
+        "requiresSafetyFlow": level != "LOW"
+    }
+
+# Safety thresholds. Calibrate with backend/check_safety_samples.py
+HARD_STOP_PHRASES = ["suicide", "suicidal", "kill myself", "killing myself", "end my life", "ending my life",
+                     "take my own life", "want to die", "wanted to die", "wanna die", "overdose",
+                     "self harm", "self-harm", "cutting myself", "cut myself", "hanging myself",
+                     "hurt myself", "harm myself", "don't want to be alive", "dont want to be alive",
+                     "don't want to live", "dont want to live", "better off dead", "wish i was dead",
+                     "wish i were dead", "no reason to live", "end it all"]
+DISTRESS_PHRASES = ["hopeless", "can't go on", "overwhelmed", "breakdown", "panicking", "depressed"]
+FICTION_CONTEXT_WORDS = ["movie", "character", "book", "song"]
+
+ZS_DANGER_HIGH = 0.80         # zero-shot "immediate danger or self harm" score -> HIGH
+CLF_SUICIDAL_HIGH = 0.70      # fine-tuned risk classifier P(Suicidal) -> HIGH
+ZS_DISTRESS_WITH_CLF = -1.0   # zero-shot distress needed when the fine-tuned classifier agrees
+CLF_DISTRESS_MEDIUM = 0.95    # P(Depression)+P(Anxiety)+P(Suicidal) needed for that agreement
+ZS_DISTRESS_ALONE = 0.85      # zero-shot distress needed when the fine-tuned classifier is unavailable
+
+
+def _risk_classifier_scores(text):
+    """Label -> probability from the fine-tuned risk classifier; {} if unavailable
+    (including when the app has fallen back to the generic hub model)."""
+    try:
+        res = get_mental_model()(text, top_k=None)
+    except Exception as e:
+        print(f"Risk classifier inference error: {e}")
+        return {}
+    if res and isinstance(res[0], list):
+        res = res[0]
+    scores = {r["label"]: float(r["score"]) for r in res}
+    return scores if "Suicidal" in scores else {}
+
+
+def _safety(level, confidence, signals):
+    return {
+        "riskLevel": level,
+        "confidence": round(float(confidence), 2),
+        "requiresSafetyFlow": level in ("HIGH", "MEDIUM"),
+        "signals": signals,
+    }
+
+
 def evaluate_safety(text):
-    text_lower = text.lower()
-    safe_contexts = ["movie", "friend", "character", "book", "song"]
-    
-    if any(ctx in text_lower for ctx in safe_contexts):
-        return {
-            "riskLevel": "LOW",
-            "confidence": 1.0,
-            "requiresSafetyFlow": False
-        }
+    text_lower = text.lower().replace("\u2019", "'")
+    hard_hit = any(p in text_lower for p in HARD_STOP_PHRASES)
+    signals = {"keyword": hard_hit}
 
-    # Crisis keyword fallback list for zero-downtime safety evaluation
-    danger_keywords = ["suicide", "kill myself", "end my life", "want to die", "overdose", "self harm", "cutting myself", "hanging myself"]
-    distress_keywords = ["hopeless", "can't go on", "overwhelmed", "breakdown", "panicking", "depressed"]
+    # Talking about a film, book, song or character is not a risk signal by itself,
+    # but this shortcut must never hide an explicit self-harm phrase.
+    if not hard_hit and any(w in text_lower for w in FICTION_CONTEXT_WORDS):
+        return _safety("LOW", 1.0, signals)
 
+    # Signal 1: zero-shot safety classifier
+    zs_danger = zs_distress = 0.0
+    zs_ok = False
     safety_pipe = get_safety_model()
     if safety_pipe is not None:
         try:
-            candidate_labels = ["safe", "emotional distress", "immediate danger or self harm"]
-            result = safety_pipe(text, candidate_labels)
-            scores = dict(zip(result['labels'], result['scores']))
-            
-            danger_score = scores.get("immediate danger or self harm", 0)
-            distress_score = scores.get("emotional distress", 0)
-            
-            if danger_score > 0.6:
-                return {
-                    "riskLevel": "HIGH",
-                    "confidence": round(danger_score, 2),
-                    "requiresSafetyFlow": True
-                }
-            elif distress_score > 0.7:
-                return {
-                    "riskLevel": "MEDIUM",
-                    "confidence": round(distress_score, 2),
-                    "requiresSafetyFlow": True
-                }
-            else:
-                return {
-                    "riskLevel": "LOW",
-                    "confidence": round(scores.get("safe", 0), 2),
-                    "requiresSafetyFlow": False
-                }
+            result = safety_pipe(text, ["safe", "emotional distress", "immediate danger or self harm"])
+            scores = dict(zip(result["labels"], result["scores"]))
+            zs_danger = scores.get("immediate danger or self harm", 0.0)
+            zs_distress = scores.get("emotional distress", 0.0)
+            zs_ok = True
         except Exception as e:
-            print(f"Safety model inference error: {e}. Falling back to rule safety evaluation.")
+            print(f"Safety model inference error: {e}. Using rule-based signals only.")
 
-    # Lightweight fail-safe fallback
-    if any(k in text_lower for k in danger_keywords):
-        return {
-            "riskLevel": "HIGH",
-            "confidence": 0.95,
-            "requiresSafetyFlow": True
-        }
-    elif any(k in text_lower for k in distress_keywords):
-        return {
-            "riskLevel": "MEDIUM",
-            "confidence": 0.85,
-            "requiresSafetyFlow": True
-        }
+    # Signal 2: fine-tuned four-class risk classifier
+    clf = _risk_classifier_scores(text)
+    clf_suicidal = clf.get("Suicidal", 0.0)
+    clf_distress = clf.get("Depression", 0.0) + clf.get("Anxiety", 0.0) + clf_suicidal
 
-    return {
-        "riskLevel": "LOW",
-        "confidence": 0.9,
-        "requiresSafetyFlow": False
-    }
+    signals.update({
+        "zero_shot_danger": round(zs_danger, 2),
+        "zero_shot_distress": round(zs_distress, 2),
+        "classifier_suicidal": round(clf_suicidal, 2),
+        "classifier_distress": round(clf_distress, 2),
+    })
+
+    # HIGH: any one strong signal is enough (a missed crisis costs far more than a false alarm).
+    if hard_hit:
+        return _safety("HIGH", 0.95, signals)
+    if zs_danger > ZS_DANGER_HIGH:
+        return _safety("HIGH", zs_danger, signals)
+    if clf_suicidal >= CLF_SUICIDAL_HIGH:
+        return _safety("HIGH", clf_suicidal, signals)
+
+    # MEDIUM: the two models must agree, so an ordinary bad day does not trigger it.
+    if clf:
+        if zs_distress > ZS_DISTRESS_WITH_CLF and clf_distress >= CLF_DISTRESS_MEDIUM:
+            return _safety("MEDIUM", min(zs_distress, clf_distress), signals)
+    elif zs_ok:
+        if zs_distress > ZS_DISTRESS_ALONE:
+            return _safety("MEDIUM", zs_distress, signals)
+
+    # No model available at all: fall back to distress phrases.
+    if not zs_ok and not clf and any(p in text_lower for p in DISTRESS_PHRASES):
+        return _safety("MEDIUM", 0.85, signals)
+
+    return _safety("LOW", 0.9, signals)
+
 
 # SAVE CHAT (WITH CONVERSATION ID & TITLE)
 
@@ -789,7 +943,10 @@ def chat(req: ChatRequest, current_user: Optional[dict] = Depends(get_optional_c
 
     mental_pipe = get_mental_model()
     mental_pred = mental_pipe(user_input)[0]
-    mental_state = mental_pred["label"]
+    mental_state = mental_pred["label"]  # raw label: shown in the UI and stored in the DB
+    mental_score = float(mental_pred.get("score", 0.0))
+    # Vocabulary used for reply generation (risk-model labels -> sadness/fear/etc.)
+    support_state = normalize_mental_state(mental_state)
 
     text_lower = user_input.lower()
     positive_current_phrases = [
@@ -803,10 +960,20 @@ def chat(req: ChatRequest, current_user: Optional[dict] = Depends(get_optional_c
     if any(phrase in text_lower for phrase in positive_current_phrases):
         final_emotion = "positive"
         mental_state = "joy"
+        support_state = "joy"
+    else:
+        # Fix obviously negative messages the emotion model tagged positive/neutral
+        final_emotion = correct_emotion_with_cues(final_emotion, user_input)
+
+        # If the trained risk model flags suicidal content with high confidence,
+        # surface the Safe Place option even if the zero-shot check said LOW.
+        if (support_state == "severe distress" and mental_score >= 0.80
+                and safety_result["riskLevel"] == "LOW"):
+            safety_result = _risk("MEDIUM", round(mental_score, 2))
 
     response = generate_response(
         final_emotion,
-        mental_state,
+        support_state,
         user_input
     )
 
@@ -1892,8 +2059,9 @@ def get_dashboard_data(
                 completion = groq_client.chat.completions.create(
                     model="openai/gpt-oss-120b",
                     messages=[{"role": "user", "content": llm_prompt}],
-                    max_tokens=60,
+                    max_tokens=250,
                     temperature=0.5,
+                    timeout=6,
                 )
                 ai_reminder = completion.choices[0].message.content.strip().replace('"', '')
                 if ai_reminder and len(ai_reminder) > 10:
@@ -2150,7 +2318,27 @@ except Exception as e:
     print(f"Image sync warning: {e}")
 
 
+# TIMING LOGS (set TIMING_LOGS=1 in backend/.env to see where a request spends its time)
+if os.environ.get("TIMING_LOGS") == "1":
+    import time as _time
 
+    def _timed(fn, label):
+        def wrapper(*a, **k):
+            t = _time.perf_counter()
+            try:
+                return fn(*a, **k)
+            finally:
+                print(f"[timing]   {label}: {_time.perf_counter() - t:.2f}s", flush=True)
+        wrapper.__name__ = fn.__name__
+        return wrapper
 
+    evaluate_safety = _timed(evaluate_safety, "safety check")
+    generate_response = _timed(generate_response, "reply (retrieval + LLM)")
+    save_chat = _timed(save_chat, "save to database")
 
-
+    @app.middleware("http")
+    async def _log_request_time(request, call_next):
+        t = _time.perf_counter()
+        response = await call_next(request)
+        print(f"[timing] {request.method} {request.url.path}: {_time.perf_counter() - t:.2f}s total", flush=True)
+        return response

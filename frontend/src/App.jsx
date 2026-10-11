@@ -9,6 +9,7 @@ import Journal from "./pages/Journal/Journal";
 import Insights from "./pages/Insights/Insights";
 import Settings from "./pages/Settings/Settings";
 import SafePlace from "./pages/SafePlace/SafePlace";
+import Professionals from "./pages/Professionals/Professionals";
 import HealingSpace from "./pages/Healing/HealingSpace";
 import Login from "./pages/Auth/Login";
 import Signup from "./pages/Auth/Signup";
@@ -75,7 +76,7 @@ function App() {
 
                     const isDemoActive = !!localStorage.getItem("demoStartedAt") && localStorage.getItem("demoLocked") !== "true";
 
-                    const protectedRoutes = ["/dashboard", "/support", "/journal", "/insights", "/healing", "/healing-space", "/settings", "/safeplace"];
+                    const protectedRoutes = ["/dashboard", "/support", "/journal", "/insights", "/healing", "/healing-space", "/settings", "/safeplace", "/professionals"];
                     if (protectedRoutes.includes(location.pathname) && !isDemoActive) {
                         navigate("/login", { state: { from: location.pathname } });
                     }
@@ -216,6 +217,11 @@ function App() {
                     <Route
                         path="/safe-place"
                         element={<SafePlace />}
+                    />
+
+                    <Route
+                        path="/professionals"
+                        element={<Professionals />}
                     />
 
                     <Route

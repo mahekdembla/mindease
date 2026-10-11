@@ -251,13 +251,44 @@ def verify_video_availability(video: Dict[str, Any]) -> bool:
 
 def get_youtube_videos() -> List[Dict[str, Any]]:
     """
-    Filter and return ONLY 100% verified, active, embeddable YouTube videos with valid thumbnails.
+    Returns the verified (active, embeddable, real thumbnail) videos.
+    Videos are checked in parallel and the result is remembered for 6 hours; a check also starts when the
+    server starts, so visitors do not wait for it.
     """
-    verified_videos = []
-    for video in CANDIDATE_VIDEOS:
-        if verify_video_availability(video):
-            verified_videos.append(video)
-        else:
-            logger.info(f"Filtered out unavailable/blocked video: {video.get('id')} - {video.get('title')}")
+    cached = _VIDEO_CACHE["videos"]
+    if cached is not None:
+        if time.time() - _VIDEO_CACHE["at"] >= _VIDEO_TTL:      # stale: refresh quietly, serve the current list
+            threading.Thread(target=_refresh_video_cache, daemon=True).start()
+        return cached
+    return _refresh_video_cache()
 
-    return verified_videos
+
+import threading, time
+from concurrent.futures import ThreadPoolExecutor
+
+_VIDEO_CACHE: Dict[str, Any] = {"videos": None, "at": 0.0}
+_VIDEO_TTL = 6 * 3600
+_VIDEO_LOCK = threading.Lock()
+
+
+def _refresh_video_cache() -> List[Dict[str, Any]]:
+    with _VIDEO_LOCK:
+        if _VIDEO_CACHE["videos"] is not None and time.time() - _VIDEO_CACHE["at"] < _VIDEO_TTL:
+            return _VIDEO_CACHE["videos"]
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            flags = list(pool.map(verify_video_availability, CANDIDATE_VIDEOS))
+        verified = [v for v, ok in zip(CANDIDATE_VIDEOS, flags) if ok]
+        for v, ok in zip(CANDIDATE_VIDEOS, flags):
+            if not ok:
+                logger.info(f"Filtered out unavailable/blocked video: {v.get('id')} - {v.get('title')}")
+        stamp = time.time()
+        if not verified:
+            logger.warning("No video passed verification (offline?). Showing the full curated list for now.")
+            verified = list(CANDIDATE_VIDEOS)
+            stamp = time.time() - _VIDEO_TTL + 120          # look again in 2 minutes
+        _VIDEO_CACHE.update(videos=verified, at=stamp)
+        return verified
+
+
+# start checking as soon as the server starts
+threading.Thread(target=_refresh_video_cache, daemon=True).start()

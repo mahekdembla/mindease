@@ -1,0 +1,54 @@
+# render.yaml — Render.com free-tier deployment configuration for MindEase backend.
+#
+# Deploy steps:
+#   1. Push this repo to GitHub.
+#   2. Go to https://dashboard.render.com → New → Web Service → connect your repo.
+#   3. Render will auto-detect this file and configure the service.
+#   4. Add the environment variables listed under `envVars` in the Render dashboard
+#      (MONGODB_URI, GROQ_API_KEY, JWT_SECRET_KEY, FRONTEND_URL, etc.).
+#
+# Free tier notes:
+#   - The instance spins down after 15 minutes of inactivity and takes ~30 s to cold-start.
+#   - 512 MB RAM: the safety model (cross-encoder/nli-distilroberta-base) may cause
+#     OOM on the free tier. If it does, set DISABLE_SAFETY_MODEL=true and the backend
+#     will fall back to the lightweight rule-based evaluator automatically.
+
+services:
+  - type: web
+    name: mindease-backend
+    runtime: python
+    rootDir: backend          # Render runs from the repo root; backend/ is the app root.
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    plan: free
+    autoDeploy: true
+
+    envVars:
+      # ── Required ────────────────────────────────────────────────────────────
+      - key: MONGODB_URI
+        sync: false           # Set in Render dashboard — never commit secrets.
+      - key: GROQ_API_KEY
+        sync: false
+      - key: JWT_SECRET_KEY
+        generateValue: true   # Render generates a secure random value on first deploy.
+      # ── Optional ────────────────────────────────────────────────────────────
+      - key: FRONTEND_URL
+        value: ""             # Set to your Vercel/Netlify URL, e.g. https://mindease.vercel.app
+      - key: MINDEASE_DB_NAME
+        value: mindease
+      - key: SENDER_EMAIL
+        sync: false
+      - key: SENDER_PASSWORD
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
+        sync: false           # Set to https://<your-render-url>/auth/google/callback
+      - key: GITHUB_CLIENT_ID
+        sync: false
+      - key: GITHUB_CLIENT_SECRET
+        sync: false
+      - key: GITHUB_REDIRECT_URI
+        sync: false           # Set to https://<your-render-url>/auth/github/callback

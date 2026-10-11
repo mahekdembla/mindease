@@ -33,6 +33,9 @@ function AISupport() {
     const [contacts, setContacts] = useState([]);
     const [selectedContacts, setSelectedContacts] = useState([]);
     const [sosSent, setSosSent] = useState(false);
+    const [dismissedSafety, setDismissedSafety] = useState(
+        () => JSON.parse(localStorage.getItem("dismissedSafety") || "[]")
+    );
     const navigate = useNavigate();
 
     const chatRef = useRef(null);
@@ -196,6 +199,31 @@ function AISupport() {
         }
     };
 
+    // "I'm Safe Right Now": hide the safety card for this message and reply kindly
+    const handleImSafe = (index) => {
+        const key = `${activeConversationId || "new"}:${index}`;
+        const updated = [...dismissedSafety, key];
+        setDismissedSafety(updated);
+        localStorage.setItem("dismissedSafety", JSON.stringify(updated));
+
+        const activities = JSON.parse(localStorage.getItem("safetyActivities")) || [];
+        activities.push({
+            title: "Marked as safe",
+            description: "Confirmed feeling safe right now after a safety check.",
+            timestamp: Date.now(),
+            date: new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString(),
+        });
+        localStorage.setItem("safetyActivities", JSON.stringify(activities));
+
+        setMessages((prev) => [
+            ...prev,
+            {
+                text: "I'm really glad you're safe right now. I'm here whenever you want to keep talking. If things start to feel heavy again, your Safe Place contacts and professional support are always one tap away 💜",
+                sender: "ai",
+            },
+        ]);
+    };
+
     // Auto scroll to bottom
     useEffect(() => {
         chatRef.current?.scrollTo(0, chatRef.current.scrollHeight);
@@ -252,7 +280,7 @@ function AISupport() {
             setMessages((prev) => [...prev, aiMessage]);
 
             // Refresh conversations list to update titles/ordering
-            await loadConversations(false);
+            loadConversations(false); // sidebar refresh (not awaited)
         } catch (error) {
             console.error("Backend error:", error);
 
@@ -382,19 +410,25 @@ function AISupport() {
                                     </button>
                                 )}
 
-                                {msg.sender === "ai" && isHighRisk && (
+                                {msg.sender === "ai" && isHighRisk && !dismissedSafety.includes(`${activeConversationId || "new"}:${index}`) && (
                                     <div className="mt-3 p-4 border border-red-300 bg-red-50 rounded-2xl max-w-md w-full shadow-sm">
                                         <p className="text-red-700 font-medium text-xs mb-3">
                                             Your safety matters. Would you like MindEase to contact someone from your Safe Place?
                                         </p>
-                                        <div className="flex gap-2">
+                                        <div className="flex flex-wrap gap-2">
                                             <button
                                                 onClick={handleOpenSos}
                                                 className="flex-1 bg-red-600 text-white text-xs font-medium py-2 rounded-xl hover:bg-red-700 transition"
                                             >
                                                 Contact Safe Person
                                             </button>
-                                            <button className="flex-1 bg-white border border-gray-300 text-gray-700 text-xs font-medium py-2 rounded-xl hover:bg-gray-50 transition">
+                                            <button
+                                                onClick={() => navigate("/professionals")}
+                                                className="flex-1 bg-white border border-red-200 text-red-700 text-xs font-medium py-2 rounded-xl hover:bg-red-50 transition"
+                                            >
+                                                Talk to a Professional
+                                            </button>
+                                            <button onClick={() => handleImSafe(index)} className="flex-1 bg-white border border-gray-300 text-gray-700 text-xs font-medium py-2 rounded-xl hover:bg-gray-50 transition">
                                                 I'm Safe Right Now
                                             </button>
                                         </div>

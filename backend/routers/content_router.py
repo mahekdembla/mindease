@@ -45,5 +45,5 @@ def ingest_content_url(payload: IngestRequest):
 @router.post("/seed")
 def seed_content():
     """Seeds default stories and articles into MongoDB."""
-    success = seed_default_content()
+    success = seed_default_content(force=True)
     return {"status": "success", "seeded": success}

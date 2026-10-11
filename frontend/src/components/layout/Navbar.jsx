@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { faUserDoctor } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
     faHouse,
@@ -108,6 +109,7 @@ function Navbar({ user: propUser, onLogout }) {
     const secondaryNavItems = [
         { name: "Healing Space", icon: faWandMagicSparkles, path: "/healing", desc: "Calming sessions & resources" },
         { name: "Safe Place", icon: faShieldHeart, path: "/safeplace", desc: "Grounding & instant relief" },
+        { name: "Professional Help", icon: faUserDoctor, path: "/professionals", desc: "Talk to a psychiatrist" },
         { name: "Settings", icon: faGear, path: "/settings", desc: "Account & preferences" },
     ];
 

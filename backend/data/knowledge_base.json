@@ -1,10 +1,14 @@
-cat << 'EOF' > data/knowledge_base.json
 [
   {"tag": "sadness", "text": "Small, achievable actions like a short walk or messaging one friend tend to help more than trying to fix everything at once when motivation is low."},
   {"tag": "anger", "text": "Naming the specific thing that's frustrating, out loud or in writing, often helps more than trying to push the feeling away."},
   {"tag": "fear", "text": "Grounding techniques like naming 5 things you can see, 4 you can touch, 3 you can hear can help interrupt anxious spiraling in the moment."},
   {"tag": "anxiety", "text": "Slow breathing, in for 4 counts, hold for 4, out for 6, can help calm the body's stress response within a few minutes."},
   {"tag": "neutral", "text": "Checking in on basic needs like sleep, food, and water is a good first step when nothing feels particularly wrong or right."},
-  {"tag": "joy", "text": "Noting what specifically contributed to a good moment can help recognize what to lean into more often."}
+  {"tag": "joy", "text": "Noting what specifically contributed to a good moment can help recognize what to lean into more often."},
+  {"tag": "conflict", "text": "After a fight with someone close, giving yourself some time to cool down and then naming what you actually need from them can make it easier to decide whether and how to reach out."},
+  {"tag": "hard_day", "text": "After a rough day, naming the one moment that weighed on you most, or writing it down, can make it feel smaller and easier to put down."},
+  {"tag": "loneliness", "text": "A small, low-pressure message to someone, like sharing a meme or asking how they are, can ease loneliness without needing a big conversation."},
+  {"tag": "overwhelm", "text": "When everything feels like too much, listing what's on your mind and then picking just one thing to focus on for the next 15 minutes can make it feel manageable."},
+  {"tag": "self_compassion", "text": "Talking to yourself the way you would talk to a close friend in the same situation can soften harsh self-criticism."},
+  {"tag": "sleep", "text": "Poor sleep makes emotions feel heavier, and a consistent wind-down routine with screens away for the last half hour of the day can help."}
 ]
-EOF
