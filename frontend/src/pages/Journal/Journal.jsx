@@ -691,9 +691,9 @@ function Journal() {
               {/* 5 Form Fields */}
               <div className="flex flex-col gap-5 mb-6">
                 {/* 1. POSSIBLE TRIGGER */}
-                <div className="p-4 sm:p-5 rounded-2xl bg-white/90 dark:bg-card border border-indigo-500/25 shadow-xs">
+                <div className="p-4 sm:p-5 rounded-2xl bg-indigo-50 dark:bg-card border-2 border-indigo-200 shadow-xs">
                   <label className="block font-extrabold text-sm text-indigo-900 dark:text-indigo-200 mb-1 flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 text-xs flex items-center justify-center font-black">1</span>
+                    <span className="w-5 h-5 rounded-full bg-indigo-600 text-white text-xs flex items-center justify-center font-black">1</span>
                     <span>Possible Trigger *</span>
                   </label>
                   <p className="text-xs text-textSecondary mb-2">What happened or what situation affected you?</p>
@@ -701,14 +701,14 @@ function Journal() {
                     value={triggerInput}
                     onChange={(e) => setTriggerInput(e.target.value)}
                     placeholder="Describe the situation or event..."
-                    className="w-full h-24 p-3.5 rounded-xl outline-none text-sm text-textPrimary bg-indigo-500/5 border border-indigo-500/20 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-400/20 resize-none"
+                    className="w-full h-24 p-3.5 rounded-xl outline-none text-sm text-textPrimary bg-white border-2 border-indigo-200 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-400/30 resize-none"
                   />
                 </div>
 
                 {/* 2. YOUR RESPONSE */}
-                <div className="p-4 sm:p-5 rounded-2xl bg-white/90 dark:bg-card border border-purple-500/25 shadow-xs">
+                <div className="p-4 sm:p-5 rounded-2xl bg-purple-50 dark:bg-card border-2 border-purple-200 shadow-xs">
                   <label className="block font-extrabold text-sm text-purple-900 dark:text-purple-200 mb-1 flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-purple-500/20 text-purple-700 dark:text-purple-300 text-xs flex items-center justify-center font-black">2</span>
+                    <span className="w-5 h-5 rounded-full bg-purple-600 text-white text-xs flex items-center justify-center font-black">2</span>
                     <span>Your Response *</span>
                   </label>
                   <p className="text-xs text-textSecondary mb-2">How did you react emotionally or behaviorally?</p>
@@ -716,14 +716,14 @@ function Journal() {
                     value={responseInput}
                     onChange={(e) => setResponseInput(e.target.value)}
                     placeholder="Describe how you reacted..."
-                    className="w-full h-24 p-3.5 rounded-xl outline-none text-sm text-textPrimary bg-purple-500/5 border border-purple-500/20 focus:border-purple-600 focus:ring-2 focus:ring-purple-400/20 resize-none"
+                    className="w-full h-24 p-3.5 rounded-xl outline-none text-sm text-textPrimary bg-white border-2 border-purple-200 focus:border-purple-600 focus:ring-2 focus:ring-purple-400/30 resize-none"
                   />
                 </div>
 
                 {/* 3. HOW DOES THIS REACTION AFFECT YOUR LIFE? */}
-                <div className="p-4 sm:p-5 rounded-2xl bg-white/90 dark:bg-card border border-rose-500/25 shadow-xs">
+                <div className="p-4 sm:p-5 rounded-2xl bg-rose-50 dark:bg-card border-2 border-rose-200 shadow-xs">
                   <label className="block font-extrabold text-sm text-rose-900 dark:text-rose-200 mb-1 flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-rose-500/20 text-rose-700 dark:text-rose-300 text-xs flex items-center justify-center font-black">3</span>
+                    <span className="w-5 h-5 rounded-full bg-rose-600 text-white text-xs flex items-center justify-center font-black">3</span>
                     <span>How does this reaction affect your life? *</span>
                   </label>
                   <p className="text-xs text-textSecondary mb-2">What impact does this response have on you?</p>
@@ -731,14 +731,14 @@ function Journal() {
                     value={lifeEffectInput}
                     onChange={(e) => setLifeEffectInput(e.target.value)}
                     placeholder="Describe the impact on your life..."
-                    className="w-full h-24 p-3.5 rounded-xl outline-none text-sm text-textPrimary bg-rose-500/5 border border-rose-500/20 focus:border-rose-600 focus:ring-2 focus:ring-rose-400/20 resize-none"
+                    className="w-full h-24 p-3.5 rounded-xl outline-none text-sm text-textPrimary bg-white border-2 border-rose-200 focus:border-rose-600 focus:ring-2 focus:ring-rose-400/30 resize-none"
                   />
                 </div>
 
                 {/* 4. WHAT MIGHT HELP NEXT TIME? */}
-                <div className="p-4 sm:p-5 rounded-2xl bg-white/90 dark:bg-card border border-emerald-500/25 shadow-xs">
+                <div className="p-4 sm:p-5 rounded-2xl bg-emerald-50 dark:bg-card border-2 border-emerald-200 shadow-xs">
                   <label className="block font-extrabold text-sm text-emerald-900 dark:text-emerald-200 mb-1 flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs flex items-center justify-center font-black">4</span>
+                    <span className="w-5 h-5 rounded-full bg-emerald-600 text-white text-xs flex items-center justify-center font-black">4</span>
                     <span>What might help next time? (Optional)</span>
                   </label>
                   <p className="text-xs text-textSecondary mb-2">What could help you respond differently or feel supported?</p>
@@ -746,18 +746,18 @@ function Journal() {
                     value={nextTimeHelpInput}
                     onChange={(e) => setNextTimeHelpInput(e.target.value)}
                     placeholder="What could help next time..."
-                    className="w-full h-20 p-3.5 rounded-xl outline-none text-sm text-textPrimary bg-emerald-500/5 border border-emerald-500/20 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-400/20 resize-none"
+                    className="w-full h-20 p-3.5 rounded-xl outline-none text-sm text-textPrimary bg-white border-2 border-emerald-200 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-400/30 resize-none"
                   />
                 </div>
 
                 {/* 5. INTENSITY METRIC SCALE */}
-                <div className="p-4 sm:p-5 rounded-2xl bg-white/90 dark:bg-card border border-amber-500/25 shadow-xs">
+                <div className="p-4 sm:p-5 rounded-2xl bg-amber-50 dark:bg-card border-2 border-amber-200 shadow-xs">
                   <div className="flex items-center justify-between mb-2">
                     <label className="font-extrabold text-sm text-amber-900 dark:text-amber-200 flex items-center gap-2">
-                      <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 text-xs flex items-center justify-center font-black">5</span>
+                      <span className="w-5 h-5 rounded-full bg-amber-600 text-white text-xs flex items-center justify-center font-black">5</span>
                       <span>How intense was this experience?</span>
                     </label>
-                    <span className="text-xs font-bold px-3 py-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/25">
+                    <span className="text-xs font-bold px-3 py-1 rounded-full bg-amber-500 text-white border border-amber-600 shadow-xs">
                       Level {intensity} / 5
                     </span>
                   </div>
@@ -837,7 +837,7 @@ function Journal() {
                             <FontAwesomeIcon icon={faCalendarDay} className="text-primary" />
                             {item.date}
                           </span>
-                          <span className="font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 px-2.5 py-0.5 rounded-full border border-amber-500/20">
+                          <span className="font-bold text-white bg-amber-500 px-2.5 py-0.5 rounded-full border border-amber-600">
                             Intensity: {item.intensity || 3}/5
                           </span>
                         </div>
@@ -852,26 +852,26 @@ function Journal() {
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 my-1">
-                        <div className="p-3.5 rounded-xl bg-indigo-500/5 border border-indigo-500/15">
+                        <div className="p-3.5 rounded-xl bg-indigo-50 border-2 border-indigo-200">
                           <span className="text-[10px] font-extrabold text-indigo-700 dark:text-indigo-300 uppercase tracking-wider block mb-1">
                             ⚡ Possible Trigger
                           </span>
                           <p className="text-xs font-medium text-textPrimary leading-relaxed">{item.trigger || item.text}</p>
                         </div>
-                        <div className="p-3.5 rounded-xl bg-purple-500/5 border border-purple-500/15">
+                        <div className="p-3.5 rounded-xl bg-purple-50 border-2 border-purple-200">
                           <span className="text-[10px] font-extrabold text-purple-700 dark:text-purple-300 uppercase tracking-wider block mb-1">
                             💭 Your Response
                           </span>
                           <p className="text-xs font-medium text-textPrimary leading-relaxed">{item.response || "Recorded response"}</p>
                         </div>
-                        <div className="p-3.5 rounded-xl bg-rose-500/5 border border-rose-500/15">
+                        <div className="p-3.5 rounded-xl bg-rose-50 border-2 border-rose-200">
                           <span className="text-[10px] font-extrabold text-rose-700 dark:text-rose-300 uppercase tracking-wider block mb-1">
                             🌊 Impact on Life
                           </span>
                           <p className="text-xs font-medium text-textPrimary leading-relaxed">{item.life_effect || "Recorded impact"}</p>
                         </div>
                         {item.next_time_help && (
-                          <div className="sm:col-span-3 p-3.5 rounded-xl bg-emerald-500/5 border border-emerald-500/15">
+                          <div className="sm:col-span-3 p-3.5 rounded-xl bg-emerald-50 border-2 border-emerald-200">
                             <span className="text-[10px] font-extrabold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider block mb-1">
                               💡 What Might Help Next Time
                             </span>

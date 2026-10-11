@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { API_URL } from "../../services/api";
 
 function Login() {
     const navigate = useNavigate();
@@ -40,11 +41,11 @@ function Login() {
     };
 
     const handleGoogleLogin = () => {
-        window.location.href = "http://127.0.0.1:8000/auth/google";
+        window.location.href = `${API_URL}/auth/google`;
     };
 
     const handleGithubLogin = () => {
-        window.location.href = "http://127.0.0.1:8000/auth/github";
+        window.location.href = `${API_URL}/auth/github`;
     };
 
     return (

@@ -10,10 +10,13 @@ import {
   faCalendarCheck,
   faArrowRight,
   faHeart,
-  faLeaf
+  faLeaf,
+  faClipboardCheck,
+  faRotate
 } from "@fortawesome/free-solid-svg-icons";
 import { fetchDashboard, saveMoodCheckin } from "../../services/api";
 import FeelingWheel, { FEELING_WHEEL_DATA } from "../../components/FeelingWheel";
+import QuestionnaireModal from "../../components/common/QuestionnaireModal";
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -25,6 +28,7 @@ function Dashboard() {
   const [selectedSpecific, setSelectedSpecific] = useState(null);
   const [selectedGranular, setSelectedGranular] = useState(null);
   const [savingCheckin, setSavingCheckin] = useState(false);
+  const [showQuestionnaire, setShowQuestionnaire] = useState(false);
 
   useEffect(() => {
     async function loadDashboard() {
@@ -52,6 +56,16 @@ function Dashboard() {
     }
     loadDashboard();
   }, []);
+
+  const handleQuestionnaireSubmitted = async () => {
+    setShowQuestionnaire(false);
+    try {
+      const data = await fetchDashboard();
+      setDashboardData(data);
+    } catch (err) {
+      console.error("Dashboard refresh error:", err);
+    }
+  };
 
   const handleSelectCore = (coreObj) => {
     setSelectedCore(coreObj);
@@ -160,6 +174,82 @@ function Dashboard() {
         </div>
       </section>
 
+      {/* 2b. YOUR COPING PLAN (questionnaire + AI Support chat driven) */}
+      <section className="relative z-10 overflow-hidden glass-card-independent border-2 border-indigo-300/70 shadow-md transition-all duration-300">
+        {dashboardData?.coping_plan?.has_questionnaire ? (
+          <div>
+            <div className="p-5 sm:p-6 bg-gradient-to-r from-indigo-600 via-purple-600 to-violet-600">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-2xl bg-white/20 text-white flex items-center justify-center shrink-0 text-lg shadow-inner backdrop-blur-sm">
+                    <FontAwesomeIcon icon={faClipboardCheck} />
+                  </div>
+                  <div>
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-white/90 bg-white/15 px-3 py-0.5 rounded-full">
+                      Your Coping Plan
+                    </span>
+                    <h3 className="text-lg font-bold text-white mt-1">{dashboardData.coping_plan.focus}</h3>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowQuestionnaire(true)}
+                  className="shrink-0 flex items-center gap-1.5 text-xs font-semibold text-indigo-900 hover:text-indigo-700 bg-white px-3 py-1.5 rounded-xl transition-colors cursor-pointer shadow-sm"
+                >
+                  <FontAwesomeIcon icon={faRotate} className="text-[10px]" />
+                  <span>Retake Check-in</span>
+                </button>
+              </div>
+              <p className="text-sm text-white/95 leading-relaxed mt-4">
+                {dashboardData.coping_plan.overview}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-5 sm:p-6">
+              {(dashboardData.coping_plan.steps || []).map((step, idx) => {
+                const accents = [
+                  { bg: "bg-indigo-50", border: "border-indigo-300", badge: "bg-indigo-600", title: "text-indigo-900" },
+                  { bg: "bg-purple-50", border: "border-purple-300", badge: "bg-purple-600", title: "text-purple-900" },
+                  { bg: "bg-emerald-50", border: "border-emerald-300", badge: "bg-emerald-600", title: "text-emerald-900" },
+                  { bg: "bg-amber-50", border: "border-amber-300", badge: "bg-amber-600", title: "text-amber-900" },
+                ];
+                const accent = accents[idx % accents.length];
+                return (
+                  <div key={idx} className={`p-4 rounded-2xl ${accent.bg} border-2 ${accent.border}`}>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className={`w-5 h-5 rounded-full ${accent.badge} text-white text-[10px] flex items-center justify-center font-black shrink-0`}>
+                        {idx + 1}
+                      </span>
+                      <p className={`text-xs font-bold ${accent.title}`}>{step.title}</p>
+                    </div>
+                    <p className="text-xs text-slate-700 leading-relaxed">{step.detail}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between gap-4 flex-wrap p-6 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-violet-500/10">
+            <div className="flex items-center gap-3.5">
+              <div className="w-11 h-11 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shrink-0 text-lg shadow-sm">
+                <FontAwesomeIcon icon={faClipboardCheck} />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-textPrimary">Build your coping plan</h3>
+                <p className="text-xs text-textSecondary mt-0.5">
+                  Take a 2-minute check-in and MindEase will turn it, plus your conversations, into a short plan to help you cope.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowQuestionnaire(true)}
+              className="shrink-0 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold shadow-sm transition-all cursor-pointer"
+            >
+              Take the Check-in
+            </button>
+          </div>
+        )}
+      </section>
+
       {/* 3. RADIAL FEELING WHEEL & WEEKLY VIEW (SIDE-BY-SIDE) */}
       <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
@@ -178,7 +268,7 @@ function Dashboard() {
         </div>
 
         {/* WEEKLY EMOTIONAL CHECK-IN VIEW (INLINE COMPACT CARD) */}
-        <div className="lg:col-span-5 flex flex-col justify-between gap-4 p-5 sm:p-6 glass-card-independent h-full">
+        <div className="lg:col-span-5 flex flex-col justify-between gap-4 p-5 sm:p-6 glass-card-independent border-2 border-purple-200 bg-gradient-to-br from-purple-50/70 via-white to-indigo-50/50 h-full">
           <div>
             <div className="flex items-center justify-between mb-1">
               <h2 className="text-xl font-bold text-textPrimary">Weekly View</h2>
@@ -245,10 +335,10 @@ function Dashboard() {
           {/* Card 1: Journal */}
           <div
             onClick={() => navigate('/journal')}
-            className="p-6 glass-card-independent flex flex-col justify-between cursor-pointer group hover:-translate-y-1.5 transition-all duration-300"
+            className="p-6 glass-card-independent border-2 border-purple-200 bg-gradient-to-br from-purple-50/60 to-white flex flex-col justify-between cursor-pointer group hover:-translate-y-1.5 hover:border-purple-400 transition-all duration-300"
           >
             <div>
-              <div className="w-12 h-12 rounded-2xl bg-purple-500/15 text-purple-600 dark:text-purple-300 flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform duration-300 shadow-inner">
+              <div className="w-12 h-12 rounded-2xl bg-purple-600 text-white flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform duration-300 shadow-sm">
                 <FontAwesomeIcon icon={faBook} />
               </div>
               <h3 className="font-bold text-textPrimary text-base mb-1 group-hover:text-primary transition-colors">
@@ -267,10 +357,10 @@ function Dashboard() {
           {/* Card 2: Talk to MindEase */}
           <div
             onClick={() => navigate('/support')}
-            className="p-6 glass-card-independent flex flex-col justify-between cursor-pointer group hover:-translate-y-1.5 transition-all duration-300"
+            className="p-6 glass-card-independent border-2 border-indigo-200 bg-gradient-to-br from-indigo-50/60 to-white flex flex-col justify-between cursor-pointer group hover:-translate-y-1.5 hover:border-indigo-400 transition-all duration-300"
           >
             <div>
-              <div className="w-12 h-12 rounded-2xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-300 flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform duration-300 shadow-inner">
+              <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform duration-300 shadow-sm">
                 <FontAwesomeIcon icon={faComments} />
               </div>
               <h3 className="font-bold text-textPrimary text-base mb-1 group-hover:text-primary transition-colors">
@@ -289,10 +379,10 @@ function Dashboard() {
           {/* Card 3: Healing Space */}
           <div
             onClick={() => navigate('/safeplace')}
-            className="p-6 glass-card-independent flex flex-col justify-between cursor-pointer group hover:-translate-y-1.5 transition-all duration-300"
+            className="p-6 glass-card-independent border-2 border-emerald-200 bg-gradient-to-br from-emerald-50/60 to-white flex flex-col justify-between cursor-pointer group hover:-translate-y-1.5 hover:border-emerald-400 transition-all duration-300"
           >
             <div>
-              <div className="w-12 h-12 rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform duration-300 shadow-inner">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform duration-300 shadow-sm">
                 <FontAwesomeIcon icon={faWind} />
               </div>
               <h3 className="font-bold text-textPrimary text-base mb-1 group-hover:text-primary transition-colors">
@@ -311,10 +401,10 @@ function Dashboard() {
           {/* Card 4: View Insights */}
           <div
             onClick={() => navigate('/insights')}
-            className="p-6 glass-card-independent flex flex-col justify-between cursor-pointer group hover:-translate-y-1.5 transition-all duration-300"
+            className="p-6 glass-card-independent border-2 border-violet-200 bg-gradient-to-br from-violet-50/60 to-white flex flex-col justify-between cursor-pointer group hover:-translate-y-1.5 hover:border-violet-400 transition-all duration-300"
           >
             <div>
-              <div className="w-12 h-12 rounded-2xl bg-violet-500/15 text-violet-600 dark:text-violet-300 flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform duration-300 shadow-inner">
+              <div className="w-12 h-12 rounded-2xl bg-violet-600 text-white flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform duration-300 shadow-sm">
                 <FontAwesomeIcon icon={faChartLine} />
               </div>
               <h3 className="font-bold text-textPrimary text-base mb-1 group-hover:text-primary transition-colors">
@@ -343,27 +433,34 @@ function Dashboard() {
 
         {dashboardData?.journey_activities && dashboardData.journey_activities.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {dashboardData.journey_activities.map((item) => (
-              <div
-                key={item.id}
-                className="p-5 glass-card-independent flex items-start gap-4 transition-all duration-300 hover:-translate-y-1 hover:border-purple-400/60"
-              >
-                <div className="w-11 h-11 rounded-2xl bg-purple-500/15 text-purple-700 dark:text-purple-300 flex items-center justify-center text-xl shrink-0 shadow-inner">
-                  {item.icon}
+            {dashboardData.journey_activities.map((item) => {
+              const typeAccent = {
+                feeling_checkin: { border: "border-purple-200", bg: "from-purple-50/60", icon: "bg-purple-600", pill: "text-purple-700 bg-purple-100" },
+                journal: { border: "border-emerald-200", bg: "from-emerald-50/60", icon: "bg-emerald-600", pill: "text-emerald-700 bg-emerald-100" },
+                ai_support: { border: "border-indigo-200", bg: "from-indigo-50/60", icon: "bg-indigo-600", pill: "text-indigo-700 bg-indigo-100" },
+              }[item.type] || { border: "border-purple-200", bg: "from-purple-50/60", icon: "bg-purple-600", pill: "text-purple-700 bg-purple-100" };
+              return (
+                <div
+                  key={item.id}
+                  className={`p-5 glass-card-independent border-2 ${typeAccent.border} bg-gradient-to-br ${typeAccent.bg} to-white flex items-start gap-4 transition-all duration-300 hover:-translate-y-1 hover:border-purple-400`}
+                >
+                  <div className={`w-11 h-11 rounded-2xl ${typeAccent.icon} text-white flex items-center justify-center text-xl shrink-0 shadow-sm`}>
+                    {item.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className={`text-[10px] font-extrabold ${typeAccent.pill} px-2 py-0.5 rounded-md uppercase tracking-wider inline-block mb-1`}>
+                      {item.title}
+                    </span>
+                    <h3 className="font-bold text-textPrimary text-sm truncate mb-1">
+                      {item.subtitle}
+                    </h3>
+                    <span className="text-xs text-textSecondary font-medium block">
+                      {item.time}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <span className="text-[10px] font-extrabold text-purple-700 dark:text-purple-300 bg-purple-500/10 px-2 py-0.5 rounded-md uppercase tracking-wider inline-block mb-1">
-                    {item.title}
-                  </span>
-                  <h3 className="font-bold text-textPrimary text-sm truncate mb-1">
-                    {item.subtitle}
-                  </h3>
-                  <span className="text-xs text-textSecondary font-medium block">
-                    {item.time}
-                  </span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="p-8 glass-card-independent text-center flex flex-col items-center gap-3">
@@ -390,6 +487,12 @@ function Dashboard() {
           </p>
         </div>
       </section>
+
+      <QuestionnaireModal
+        isOpen={showQuestionnaire}
+        onClose={() => setShowQuestionnaire(false)}
+        onSubmitted={handleQuestionnaireSubmitted}
+      />
 
     </div>
   );

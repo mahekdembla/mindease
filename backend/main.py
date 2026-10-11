@@ -19,13 +19,17 @@ env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
 load_dotenv(dotenv_path=env_path, override=True)
 
 from fastapi import FastAPI, Request, Response, Depends, HTTPException, status  # type: ignore # pyrefly: ignore [missing-import]
-from fastapi.responses import RedirectResponse  # type: ignore # pyrefly: ignore [missing-import]
+from fastapi.responses import RedirectResponse, StreamingResponse  # type: ignore # pyrefly: ignore [missing-import]
 from fastapi.middleware.cors import CORSMiddleware  # type: ignore # pyrefly: ignore [missing-import]
-from pydantic import BaseModel  # type: ignore # pyrefly: ignore [missing-import]
+from pydantic import BaseModel, Field  # type: ignore # pyrefly: ignore [missing-import]
 from transformers import pipeline  # type: ignore # pyrefly: ignore [missing-import]
 from bson import ObjectId  # type: ignore # pyrefly: ignore [missing-import]
+from langdetect import detect as detect_language, DetectorFactory  # type: ignore # pyrefly: ignore [missing-import]
+from langdetect.lang_detect_exception import LangDetectException  # type: ignore # pyrefly: ignore [missing-import]
+DetectorFactory.seed = 0  # deterministic detection (langdetect is otherwise randomized per call)
 
-from rag import generate_llm_response
+from rag import generate_llm_response, stream_llm_response, translate_to_english, translate_like
+import memory
 from database.mongodb import db_manager
 from auth import (
     hash_password,
@@ -44,17 +48,26 @@ async def lifespan(app: FastAPI):
     if os.environ.get("WARM_UP_MODELS", "1") == "1":
         _warm_up_models()
     yield
+    memory.flush_all_pending()      # write memory notes still waiting for the conversation to pause
     db_manager.close_db()
 
 # INIT APP
 
 app = FastAPI(lifespan=lifespan)
 
-# CORS
+# FRONTEND / CORS
+# FRONTEND_URL: where the React app is served (OAuth redirects land there). In production set it
+# to the deployed URL; several origins may be given comma-separated (the first one is used for
+# redirects). Any localhost / 127.0.0.1 port is always allowed for local development.
+
+FRONTEND_ORIGINS = [u.strip().rstrip("/") for u in os.environ.get("FRONTEND_URL", "").split(",") if u.strip()]
+FRONTEND_URL = FRONTEND_ORIGINS[0] if FRONTEND_ORIGINS else "http://localhost:5173"
+COOKIE_SECURE = FRONTEND_URL.startswith("https://")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000", "*"],
+    allow_origins=FRONTEND_ORIGINS,
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -120,7 +133,7 @@ def get_mental_model():
 
 def get_safety_model():
     global _safety_model
-    if os.environ.get("DISABLE_SAFETY_MODEL") == "1":
+    if os.environ.get("DISABLE_SAFETY_MODEL", "").strip().lower() in ("1", "true", "yes"):
         return None  # skip the slow zero-shot model; keywords + fine-tuned classifier still decide
     if _safety_model is None:
         try:
@@ -193,7 +206,7 @@ def set_auth_cookie(response: Response, token: str):
         value=token,
         httponly=True,
         samesite="lax",
-        secure=False,  # Set to False for local HTTP development
+        secure=COOKIE_SECURE,  # HTTPS-only cookie when the frontend is served over HTTPS
         max_age=7 * 24 * 3600
     )
 
@@ -286,6 +299,43 @@ def get_me(current_user: dict = Depends(get_current_user)):
         "auth_provider": current_user.get("auth_provider", "local")
     }
 
+class UpdateProfileRequest(BaseModel):
+    name: Optional[str] = None
+    email: Optional[str] = None
+
+@app.put("/auth/me")
+def update_me(req: UpdateProfileRequest, current_user: dict = Depends(get_current_user)):
+    users_col = db_manager.users
+    if not db_manager.is_connected() or users_col is None:
+        raise HTTPException(status_code=503, detail="Database service unavailable.")
+
+    updates = {}
+    if req.name is not None:
+        name = req.name.strip()
+        if not name:
+            raise HTTPException(status_code=400, detail="Name cannot be empty.")
+        updates["name"] = name
+    if req.email is not None:
+        email = req.email.lower().strip()
+        if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
+            raise HTTPException(status_code=400, detail="Please enter a valid email address.")
+        if email != current_user.get("email"):
+            if users_col.find_one({"email": email, "_id": {"$ne": current_user["_id"]}}):
+                raise HTTPException(status_code=400, detail="An account with this email already exists.")
+            updates["email"] = email
+
+    if updates:
+        updates["updated_at"] = datetime.now()
+        users_col.update_one({"_id": current_user["_id"]}, {"$set": updates})
+        current_user.update(updates)
+
+    return {
+        "id": str(current_user["_id"]),
+        "name": current_user.get("name", "User"),
+        "email": current_user.get("email"),
+        "auth_provider": current_user.get("auth_provider", "local")
+    }
+
 @app.post("/auth/logout")
 def logout(response: Response, current_user: dict = Depends(get_current_user)):
     users_col = db_manager.users
@@ -322,7 +372,7 @@ def google_auth():
         value=state,
         httponly=True,
         samesite="lax",
-        secure=False,
+        secure=COOKIE_SECURE,
         max_age=600
     )
     return redirect_resp
@@ -401,7 +451,7 @@ def google_callback(request: Request, code: str, state: Optional[str] = None):
 
     token = create_access_token(user_id_str, token_version=token_version)
     
-    redirect_response = RedirectResponse(url=f"http://localhost:5173/dashboard?token={token}")
+    redirect_response = RedirectResponse(url=f"{FRONTEND_URL}/dashboard?token={token}")
     set_auth_cookie(redirect_response, token)
     redirect_response.delete_cookie("mindease_google_oauth_state")
     return redirect_response
@@ -430,7 +480,7 @@ def github_auth():
         value=state,
         httponly=True,
         samesite="lax",
-        secure=False,
+        secure=COOKIE_SECURE,
         max_age=600
     )
     return redirect_resp
@@ -527,7 +577,7 @@ def github_callback(request: Request, code: str, state: Optional[str] = None):
 
     token = create_access_token(user_id_str, token_version=token_version)
     
-    redirect_response = RedirectResponse(url=f"http://localhost:5173/dashboard?token={token}")
+    redirect_response = RedirectResponse(url=f"{FRONTEND_URL}/dashboard?token={token}")
     set_auth_cookie(redirect_response, token)
     redirect_response.delete_cookie("mindease_github_oauth_state")
     return redirect_response
@@ -600,11 +650,16 @@ def correct_emotion_with_cues(emotion, user_text):
 
 # RESPONSE GENERATION
 
-def generate_response(emotion, mental_state, user_text, history=None):
-    llm_reply = generate_llm_response(user_text, emotion, mental_state, history)
+def generate_response(emotion, mental_state, user_text, history=None, memory_context=None,
+                      user_name=None, recent_replies=None):
+    llm_reply = generate_llm_response(user_text, emotion, mental_state, history, memory_context,
+                                      user_name=user_name, recent_replies=recent_replies)
     if llm_reply:
         return llm_reply
+    return fallback_reply(emotion)
 
+
+def fallback_reply(emotion):
     # Fallback templates, used only when the LLM is unavailable. They key off `emotion`
     # (the app's 5-class mood label), which is reliable with both the fine-tuned and hub models.
     if emotion == "negative":
@@ -621,46 +676,16 @@ def generate_response(emotion, mental_state, user_text, history=None):
 
 # SAFETY DETECTION
 
-# Unambiguous self-harm / suicide language: always HIGH, regardless of context.
-STRONG_DANGER_PATTERNS = [
-    r"\bkill(?:ing)? myself\b",
-    r"\bend(?:ing)? my (?:own )?life\b",
-    r"\btake my own life\b",
-    r"\bwant(?:ed|s)? to die\b",
-    r"\bwanna die\b",
-    r"\bwish i (?:was|were) dead\b",
-    r"\bbetter off dead\b",
-    r"\b(?:don't|dont|do not) want to (?:live|be alive|be here)\b",
-    r"\bno reason to live\b",
-    r"\bend it all\b",
-    r"\b(?:hurt(?:ing)?|harm(?:ing)?|cut(?:ting)?|hang(?:ing)?) myself\b",
-    r"\bsuicidal\b",
-]
-
-# Words that can appear in non-personal talk ("a movie about suicide"): HIGH only
-# when the message is also about the speaker.
-AMBIGUOUS_DANGER_PATTERNS = [
-    r"\bsuicide\b",
-    r"\boverdos(?:e|ing)\b",
-    r"\bself[- ]?harm\b",
-]
-
-# Figures of speech that should not trigger the crisis flow.
+# Figures of speech that should not trigger the crisis flow ("I want to die of embarrassment").
 DIE_IDIOMS = (r"\bto die (?:of|from) (?:embarrassment|shame|laughter|boredom)\b"
               r"|\bdie laughing\b"
               r"|\bdying (?:of|from) (?:embarrassment|shame|laughter|boredom)\b")
 
 FIRST_PERSON = r"\b(?:i|i'm|im|i've|ive|i'll|my|me|myself)\b"
 
-# Talk about fiction/media with no reference to the speaker is not a risk signal.
-FICTION_CONTEXTS = ["movie", "film", "book", "novel", "character", "song"]
-
-# Strong distress wording: floors the level at MEDIUM even if the model says safe.
-STRONG_DISTRESS_KEYWORDS = ["hopeless", "can't go on", "cant go on", "can't take it anymore",
-                            "cant take it anymore", "no way out", "worthless", "give up on life"]
-
-# Weaker wording, only used when the safety model could not be loaded.
-FALLBACK_DISTRESS_KEYWORDS = ["overwhelmed", "breakdown", "panicking", "depressed"]
+# Hard-stop words that also appear in impersonal talk ("a movie about suicide"). When one of
+# these is the ONLY hard-stop hit, it counts only if the message also refers to the speaker.
+AMBIGUOUS_HARD_STOP = {"suicide", "overdose", "self harm", "self-harm"}
 
 def _risk(level, confidence):
     return {
@@ -680,7 +705,14 @@ DISTRESS_PHRASES = ["hopeless", "can't go on", "overwhelmed", "breakdown", "pani
 FICTION_CONTEXT_WORDS = ["movie", "character", "book", "song"]
 
 ZS_DANGER_HIGH = 0.80         # zero-shot "immediate danger or self harm" score -> HIGH
-CLF_SUICIDAL_HIGH = 0.70      # fine-tuned risk classifier P(Suicidal) -> HIGH
+CLF_SUICIDAL_HIGH = 0.70      # fine-tuned risk classifier P(Suicidal) -> HIGH, but only when the
+                              # zero-shot model at least mildly agrees (see ZS_DANGER_CONFIRM below):
+                              # on its own this classifier reacts to ordinary loneliness/exhaustion
+                              # language ("I'm so tired of not feeling my family's presence") the
+                              # same way it reacts to real crisis language, which forced those
+                              # messages straight past the LLM into the canned crisis reply.
+CLF_SUICIDAL_VERY_HIGH = 0.92 # fine-tuned classifier confident enough to count on its own
+ZS_DANGER_CONFIRM = 0.30      # zero-shot "danger" score needed to corroborate a CLF_SUICIDAL_HIGH hit
 ZS_DISTRESS_WITH_CLF = -1.0   # zero-shot distress needed when the fine-tuned classifier agrees
 CLF_DISTRESS_MEDIUM = 0.95    # P(Depression)+P(Anxiety)+P(Suicidal) needed for that agreement
 ZS_DISTRESS_ALONE = 0.85      # zero-shot distress needed when the fine-tuned classifier is unavailable
@@ -709,9 +741,20 @@ def _safety(level, confidence, signals):
     }
 
 
+def _hard_stop_hit(text_lower):
+    """True if the message contains explicit self-harm language about the speaker."""
+    scan = re.sub(DIE_IDIOMS, " ", text_lower)          # "die of embarrassment" is not a risk phrase
+    hits = {p for p in HARD_STOP_PHRASES if p in scan}
+    if not hits:
+        return False
+    if hits <= AMBIGUOUS_HARD_STOP:                      # only "suicide"/"overdose"/"self harm"
+        return re.search(FIRST_PERSON, scan) is not None
+    return True
+
+
 def evaluate_safety(text):
     text_lower = text.lower().replace("\u2019", "'")
-    hard_hit = any(p in text_lower for p in HARD_STOP_PHRASES)
+    hard_hit = _hard_stop_hit(text_lower)
     signals = {"keyword": hard_hit}
 
     # Talking about a film, book, song or character is not a risk signal by itself,
@@ -745,12 +788,16 @@ def evaluate_safety(text):
         "classifier_distress": round(clf_distress, 2),
     })
 
-    # HIGH: any one strong signal is enough (a missed crisis costs far more than a false alarm).
+    # HIGH: explicit keywords or a strong zero-shot danger score are trusted alone (a missed crisis
+    # costs far more than a false alarm). The fine-tuned classifier is noisier on everyday distress
+    # phrasing, so unless it is near-certain on its own, it needs the zero-shot model's agreement.
     if hard_hit:
         return _safety("HIGH", 0.95, signals)
     if zs_danger > ZS_DANGER_HIGH:
         return _safety("HIGH", zs_danger, signals)
-    if clf_suicidal >= CLF_SUICIDAL_HIGH:
+    if clf_suicidal >= CLF_SUICIDAL_VERY_HIGH:
+        return _safety("HIGH", clf_suicidal, signals)
+    if clf_suicidal >= CLF_SUICIDAL_HIGH and zs_danger >= ZS_DANGER_CONFIRM:
         return _safety("HIGH", clf_suicidal, signals)
 
     # MEDIUM: the two models must agree, so an ordinary bad day does not trigger it.
@@ -799,7 +846,7 @@ def save_chat(user_input, response, emotion, mental_state, user_id: str = "demo_
                 "response": response,
                 "emotion": emotion,
                 "mental_state": mental_state,
-                "safety_level": "HIGH" if emotion == "crisis" else "LOW",
+                "safety_level": (safety or {}).get("riskLevel") or ("HIGH" if emotion == "crisis" else "LOW"),
                 "top_emotions": top_emotions or ([emotion] if emotion else []),
                 "safety": safety or {},
                 "time": time_str,
@@ -857,80 +904,176 @@ def health():
 # SOS EMAIL API
 
 class SosRequest(BaseModel):
-    emails: List[str]
+    emails: List[str] = []
+    automatic: bool = False
 
 @app.post("/api/sos")
-def send_sos(req: SosRequest):
+def send_sos(req: SosRequest, current_user: dict = Depends(get_current_user)):
+    """Emails the caller's own SOS-enabled trusted contacts. `emails` narrows the selection;
+    addresses that are not among the user's contacts are ignored, so this cannot be used to
+    send mail to arbitrary people."""
+    user_id = str(current_user["_id"])
+    contacts_col = db_manager.trusted_contacts
+    if not db_manager.is_connected() or contacts_col is None:
+        raise HTTPException(status_code=503, detail="Database service unavailable.")
+
+    allowed = {
+        (c.get("email") or "").strip().lower()
+        for c in contacts_col.find({"user_id": user_id, "receive_sos": {"$ne": False}})
+    } - {""}
+    requested = {e.strip().lower() for e in req.emails if e and e.strip()}
+    recipients = sorted(allowed & requested if requested else allowed)
+    if not recipients:
+        raise HTTPException(status_code=400, detail="No trusted contacts with SOS alerts enabled. Add one in Safe Place.")
+
     sender_email = os.environ.get("SENDER_EMAIL")
     sender_password = os.environ.get("SENDER_PASSWORD")
 
     if not sender_email or not sender_password:
-        print("WARNING: Email not sent. Please set SENDER_EMAIL and SENDER_PASSWORD environment variables.")
-        return {"message": "Simulated sending emails. Set credentials to actually send."}
+        print("WARNING: SOS email NOT sent. Set SENDER_EMAIL and SENDER_PASSWORD in backend/.env.")
+        return {
+            "sent": 0,
+            "simulated": True,
+            "message": "SOS email is not configured on the server, so no email was sent."
+        }
 
+    first_name = (current_user.get("name") or "Your friend").split(" ")[0]
     subject = "MindEase SOS Alert"
-    body = """
+    body = f"""
     <h2>MindEase SOS Alert</h2>
-    <p>Your friend is not feeling okay right now and has indicated through MindEase that they may need immediate support.</p>
+    <p>{first_name} is not feeling okay right now and has indicated through MindEase that they may need immediate support.</p>
     <p><strong>Please check on them as soon as you can.</strong></p>
     """
-    
+
     try:
-        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server = smtplib.SMTP("smtp.gmail.com", 587, timeout=15)
         server.starttls()
         server.login(sender_email, sender_password)
-        
-        for recipient in req.emails:
+
+        for recipient in recipients:
             msg = MIMEMultipart()
             msg["From"] = sender_email
             msg["To"] = recipient
             msg["Subject"] = subject
             msg.attach(MIMEText(body, "html"))
-            
+
             server.send_message(msg)
-            
+
         server.quit()
-        return {"message": f"Successfully sent SOS to {len(req.emails)} contacts."}
-        
     except Exception as e:
-        print(f"Failed to send email: {e}")
-        return {"error": str(e)}
+        print(f"Failed to send SOS email: {e}")
+        raise HTTPException(status_code=502, detail="Could not send the SOS email. Please contact someone directly.")
+
+    if db_manager.safety_activities is not None:
+        try:
+            db_manager.safety_activities.insert_one({
+                "user_id": user_id,
+                "type": "sos_automatic" if req.automatic else "sos_manual",
+                "recipients": len(recipients),
+                "timestamp": datetime.now()
+            })
+        except Exception:
+            pass
+
+    return {
+        "sent": len(recipients),
+        "simulated": False,
+        "message": f"Successfully sent SOS to {len(recipients)} contact(s)."
+    }
 
 
 # CHAT API
 
-@app.post("/chat")
-def chat(req: ChatRequest, current_user: Optional[dict] = Depends(get_optional_current_user)):
-    user_input = req.message
-    user_id = str(current_user["_id"]) if current_user else "demo_user"
-    conv_id = req.conversation_id
+def load_conversation_history(user_id: str, conversation_id: Optional[str], max_turns: int = 6):
+    """Last `max_turns` exchanges of this conversation as LLM messages (oldest first)."""
+    if not conversation_id:
+        return []
+    turns = []
+    if db_manager.is_connected() and db_manager.chat_history is not None:
+        try:
+            turns = list(db_manager.chat_history.find(
+                {"user_id": user_id, "conversation_id": conversation_id},
+                {"_id": 0, "message": 1, "response": 1}
+            ).sort("timestamp", -1).limit(max_turns))[::-1]
+        except Exception as e:
+            print(f"MongoDB load_conversation_history error: {e}")
+    else:
+        try:
+            with open("chat_history.json", "r") as f:
+                turns = [c for c in json.load(f)
+                         if c.get("user_id") == user_id and c.get("conversation_id") == conversation_id][-max_turns:]
+        except Exception:
+            turns = []
 
-    safety_result = evaluate_safety(user_input)
+    history = []
+    for t in turns:
+        if t.get("message"):
+            history.append({"role": "user", "content": t["message"]})
+        if t.get("response"):
+            history.append({"role": "assistant", "content": t["response"]})
+    return history
+
+
+CRISIS_RESPONSE = "I'm really sorry you're going through this. Your safety is important. You don't have to handle this alone."
+
+_crisis_translation_cache = {}
+
+
+def crisis_response_for(user_input, language):
+    """CRISIS_RESPONSE in the user's own language. Translated once per language and cached (it's a
+    fixed string, so there's no need to call the LLM again for the next person who needs it in the
+    same language). Falls back to the English original if translation fails - a crisis reply must
+    never go missing."""
+    if language == "en":
+        return CRISIS_RESPONSE
+    if language in _crisis_translation_cache:
+        return _crisis_translation_cache[language]
+    translated = translate_like(CRISIS_RESPONSE, user_input)
+    _crisis_translation_cache[language] = translated
+    return translated
+
+POSITIVE_CURRENT_PHRASES = [
+    "now i am happy", "now i'm happy", "now i feel happy",
+    "now i am feeling happy", "now i'm feeling happy",
+    "but now i am happy", "but now i'm happy",
+    "but now i feel happy", "but now i'm feeling happy",
+    "i am happy now", "i'm happy now", "feeling happy now"
+]
+
+
+def detect_user_language(text):
+    """ISO 639-1 code for `text`, or "en" when detection isn't reliable (too short, mixed script,
+    detector failure) - treating it as English in that case is the safe default: it just skips the
+    translation step below rather than mistranslating."""
+    stripped = (text or "").strip()
+    if len(stripped.split()) < 3:
+        return "en"
+    try:
+        return detect_language(stripped)
+    except LangDetectException:
+        return "en"
+
+
+def analyze_message(user_input):
+    """Safety check + emotion / mental-state classification shared by /chat and /chat/stream.
+
+    The classifiers (safety, emotion, mental-state) are English-only models, but MindEase itself is
+    multilingual: the chat LLM naturally replies in whatever language the user writes in, with no
+    translation needed there. So a non-English message is translated to English ONLY for these
+    classifiers; `user_input` itself is untouched and still flows to the reply LLM and to storage.
+    """
+    language = detect_user_language(user_input)
+    classify_text = user_input if language == "en" else translate_to_english(user_input)
+
+    safety_result = evaluate_safety(classify_text)
 
     if safety_result["riskLevel"] == "HIGH":
-        response = "I'm really sorry you're going through this. Your safety is important. You don't have to handle this alone."
-        
-        assigned_conv_id, assigned_title = save_chat(
-            user_input,
-            response,
-            "crisis",
-            "critical",
-            user_id,
-            conversation_id=conv_id,
-            safety=safety_result
-        )
-        
-        return {
-            "response": response,
-            "emotion": "crisis",
-            "mental_state": "critical",
-            "safety": safety_result,
-            "conversation_id": assigned_conv_id,
-            "title": assigned_title
-        }
+        return {"crisis": True, "safety": safety_result, "emotion": "crisis",
+                "mental_state": "critical", "support_state": "critical", "top_emotions": None,
+                "language": language}
 
     emotion_pipe = get_emotion_model()
-    emotion_preds = emotion_pipe(user_input)[0]
+    emotion_preds = emotion_pipe(classify_text)[0]
     raw_emotions = []
     mapped_emotions = []
 
@@ -942,28 +1085,21 @@ def chat(req: ChatRequest, current_user: Optional[dict] = Depends(get_optional_c
     final_emotion = mapped_emotions[0]
 
     mental_pipe = get_mental_model()
-    mental_pred = mental_pipe(user_input)[0]
+    mental_pred = mental_pipe(classify_text)[0]
     mental_state = mental_pred["label"]  # raw label: shown in the UI and stored in the DB
     mental_score = float(mental_pred.get("score", 0.0))
     # Vocabulary used for reply generation (risk-model labels -> sadness/fear/etc.)
     support_state = normalize_mental_state(mental_state)
 
-    text_lower = user_input.lower()
-    positive_current_phrases = [
-        "now i am happy", "now i'm happy", "now i feel happy",
-        "now i am feeling happy", "now i'm feeling happy",
-        "but now i am happy", "but now i'm happy",
-        "but now i feel happy", "but now i'm feeling happy",
-        "i am happy now", "i'm happy now", "feeling happy now"
-    ]
+    text_lower = classify_text.lower()
 
-    if any(phrase in text_lower for phrase in positive_current_phrases):
+    if any(phrase in text_lower for phrase in POSITIVE_CURRENT_PHRASES):
         final_emotion = "positive"
         mental_state = "joy"
         support_state = "joy"
     else:
         # Fix obviously negative messages the emotion model tagged positive/neutral
-        final_emotion = correct_emotion_with_cues(final_emotion, user_input)
+        final_emotion = correct_emotion_with_cues(final_emotion, classify_text)
 
         # If the trained risk model flags suicidal content with high confidence,
         # surface the Safe Place option even if the zero-shot check said LOW.
@@ -971,32 +1107,137 @@ def chat(req: ChatRequest, current_user: Optional[dict] = Depends(get_optional_c
                 and safety_result["riskLevel"] == "LOW"):
             safety_result = _risk("MEDIUM", round(mental_score, 2))
 
-    response = generate_response(
-        final_emotion,
-        support_state,
-        user_input
-    )
+    return {"crisis": False, "safety": safety_result, "emotion": final_emotion,
+            "mental_state": mental_state, "support_state": support_state, "top_emotions": raw_emotions,
+            "language": language}
 
+
+def _chat_result(analysis, response, conversation_id, title):
+    result = {
+        "response": response,
+        "emotion": analysis["emotion"],
+        "mental_state": analysis["mental_state"],
+        "safety": analysis["safety"],
+        "conversation_id": conversation_id,
+        "title": title
+    }
+    if analysis["top_emotions"] is not None:
+        result["top_emotions"] = analysis["top_emotions"]
+    return result
+
+
+def _save_and_remember(user_input, response, analysis, user_id, conv_id):
     assigned_conv_id, assigned_title = save_chat(
         user_input,
         response,
-        final_emotion,
-        mental_state,
+        analysis["emotion"],
+        analysis["mental_state"],
         user_id,
         conversation_id=conv_id,
-        top_emotions=raw_emotions,
-        safety=safety_result
+        top_emotions=analysis["top_emotions"],
+        safety=analysis["safety"]
     )
+    # Fold this exchange into the long-term memory note (runs in the background)
+    memory.remember_in_background(user_id, assigned_conv_id, user_input, response, assigned_title)
+    return assigned_conv_id, assigned_title
 
-    return {
-        "response": response,
-        "emotion": final_emotion,
-        "mental_state": mental_state,
-        "top_emotions": raw_emotions,
-        "safety": safety_result,
-        "conversation_id": assigned_conv_id,
-        "title": assigned_title
-    }
+
+def load_recent_replies(user_id: str, exclude_conversation_id: Optional[str], limit: int = 5):
+    """MindEase's latest replies to this user in OTHER conversations, so a new chat does not open
+    the same way as the last few did."""
+    if user_id == "demo_user" or not db_manager.is_connected() or db_manager.chat_history is None:
+        return []
+    query = {"user_id": user_id, "emotion": {"$ne": "crisis"}}
+    if exclude_conversation_id:
+        query["conversation_id"] = {"$ne": exclude_conversation_id}
+    try:
+        docs = db_manager.chat_history.find(query, {"_id": 0, "response": 1}).sort("timestamp", -1).limit(limit)
+        return [d["response"] for d in docs if d.get("response")]
+    except Exception as e:
+        print(f"MongoDB load_recent_replies error: {e}")
+        return []
+
+
+def _first_name(current_user):
+    name = (current_user or {}).get("name") or ""
+    return name.split(" ")[0] if name.strip() else None
+
+
+@app.post("/chat")
+def chat(req: ChatRequest, current_user: Optional[dict] = Depends(get_optional_current_user)):
+    user_input = req.message
+    user_id = str(current_user["_id"]) if current_user else "demo_user"
+    conv_id = req.conversation_id
+
+    analysis = analyze_message(user_input)
+
+    if analysis["crisis"]:
+        response = crisis_response_for(user_input, analysis["language"])
+    else:
+        response = generate_response(
+            analysis["emotion"],
+            analysis["support_state"],
+            user_input,
+            history=load_conversation_history(user_id, conv_id),
+            memory_context=memory.recall_context(user_id, conv_id, user_input),
+            user_name=_first_name(current_user),
+            recent_replies=load_recent_replies(user_id, conv_id)
+        )
+
+    assigned_conv_id, assigned_title = _save_and_remember(user_input, response, analysis, user_id, conv_id)
+    return _chat_result(analysis, response, assigned_conv_id, assigned_title)
+
+
+def _sse(payload):
+    return f"data: {json.dumps(payload, default=str)}\n\n"
+
+
+@app.post("/chat/stream")
+def chat_stream(req: ChatRequest, current_user: Optional[dict] = Depends(get_optional_current_user)):
+    """Same as /chat, but the reply is sent as Server-Sent Events while the model writes it:
+    {"type": "delta", "text": ...} pieces, then one {"type": "done", ...} event carrying the same
+    fields /chat returns. The full reply is saved once it is complete."""
+    user_input = req.message
+    user_id = str(current_user["_id"]) if current_user else "demo_user"
+    conv_id = req.conversation_id
+
+    def events():
+        try:
+            analysis = analyze_message(user_input)
+            pieces = []
+            if analysis["crisis"]:
+                crisis_text = crisis_response_for(user_input, analysis["language"])
+                pieces.append(crisis_text)
+                yield _sse({"type": "delta", "text": crisis_text})
+            else:
+                for piece in stream_llm_response(
+                    user_input,
+                    analysis["emotion"],
+                    analysis["support_state"],
+                    load_conversation_history(user_id, conv_id),
+                    memory.recall_context(user_id, conv_id, user_input),
+                    user_name=_first_name(current_user),
+                    recent_replies=load_recent_replies(user_id, conv_id),
+                ):
+                    pieces.append(piece)
+                    yield _sse({"type": "delta", "text": piece})
+                if not "".join(pieces).strip():
+                    fallback = fallback_reply(analysis["emotion"])
+                    pieces = [fallback]
+                    yield _sse({"type": "delta", "text": fallback})
+
+            response = "".join(pieces).strip()
+            assigned_conv_id, assigned_title = _save_and_remember(user_input, response, analysis, user_id, conv_id)
+            yield _sse({"type": "done", **_chat_result(analysis, response, assigned_conv_id, assigned_title)})
+        except Exception as e:
+            print(f"/chat/stream error: {type(e).__name__}: {e}")
+            yield _sse({"type": "error", "message": "Something went wrong while replying."})
+
+    return StreamingResponse(
+        events(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 # GET CHAT HISTORY & CONVERSATIONS (USER ISOLATED)
@@ -1116,6 +1357,7 @@ def delete_conversation(conversation_id: str, current_user: dict = Depends(get_c
     if db_manager.is_connected() and db_manager.chat_history is not None:
         try:
             res = db_manager.chat_history.delete_many({"user_id": user_id, "conversation_id": conversation_id})
+            memory.delete_conversation_memory(user_id, conversation_id)
             if res.deleted_count > 0:
                 return {"message": "Conversation deleted successfully"}
             raise HTTPException(status_code=404, detail="Conversation not found")
@@ -1180,8 +1422,14 @@ def save_journal(req: JournalRequest, user_id: str):
             top_doc = db_manager.journal_entries.find_one(sort=[("id", -1)])
             if top_doc and "id" in top_doc and isinstance(top_doc["id"], int):
                 max_id = max(max_id, top_doc["id"])
-            
-            new_id = max_id + 1
+
+            # Atomic counter so two simultaneous saves never get the same id
+            # ($max keeps it ahead of any existing entry, $inc hands out the next value).
+            counters = db_manager.get_collection("counters")
+            counters.update_one({"_id": "journal_id"}, {"$max": {"seq": max_id}}, upsert=True)
+            new_id = counters.find_one_and_update(
+                {"_id": "journal_id"}, {"$inc": {"seq": 1}}, return_document=True
+            )["seq"]
             doc = {
                 "id": new_id,
                 "user_id": user_id,
@@ -1207,6 +1455,7 @@ def save_journal(req: JournalRequest, user_id: str):
             
             data_to_save = {
                 "id": new_id,
+                "user_id": user_id,
                 "title": final_title,
                 "text": final_text,
                 "mood": req.mood or "",
@@ -1230,6 +1479,7 @@ def save_journal(req: JournalRequest, user_id: str):
     new_id = max_id + 1
     data = {
         "id": new_id,
+        "user_id": user_id,
         "title": final_title,
         "text": final_text,
         "mood": req.mood or "",
@@ -1268,7 +1518,7 @@ def get_journal(current_user: dict = Depends(get_current_user)):
 
     try:
         with open("journal.json", "r") as f:
-            return json.load(f)
+            return [j for j in json.load(f) if j.get("user_id") == user_id]
     except:
         return []
 
@@ -1351,9 +1601,10 @@ def update_journal(
                 try:
                     with open("journal.json", "r") as f:
                         journals = json.load(f)
+                    mirror_fields = {k: v for k, v in set_fields.items() if k != "updated_at"}
                     for j in journals:
-                        if str(j.get("id")) == str(journal_id):
-                            j.update(set_fields)
+                        if str(j.get("id")) == str(updated.get("id")):
+                            j.update(mirror_fields)
                     with open("journal.json", "w") as f:
                         json.dump(journals, f, indent=4)
                 except Exception:
@@ -1373,7 +1624,8 @@ def update_journal(
         journals = []
 
     for journal in journals:
-        if str(journal.get("id")) == str(journal_id):
+        if str(journal.get("id")) == str(journal_id) and journal.get("user_id") == user_id:
+            set_fields.pop("updated_at", None)   # datetime is not JSON serialisable
             journal.update(set_fields)
             with open("journal.json", "w") as f:
                 json.dump(journals, f, indent=4)
@@ -1412,8 +1664,10 @@ def delete_journal(journal_id: str, current_user: dict = Depends(get_current_use
     try:
         with open("journal.json", "r") as f:
             journals = json.load(f)
+        # Mirror of a DB delete (already authorised by the user-scoped query), or the caller's own local entry
         updated_journals = [
-            j for j in journals if str(j.get("id")) != str(journal_id)
+            j for j in journals
+            if not (str(j.get("id")) == str(journal_id) and (deleted_in_db or j.get("user_id") == user_id))
         ]
         if len(updated_journals) < len(journals):
             with open("journal.json", "w") as f:
@@ -1533,7 +1787,7 @@ def get_insights(view: str = "weekly", current_user: dict = Depends(get_current_
     journals = []
     if db_manager.is_connected() and db_manager.journal_entries is not None:
         try:
-            cursor = db_manager.journal_entries.find({"$or": [{"user_id": user_id}, {"user_id": {"$exists": False}}]})
+            cursor = db_manager.journal_entries.find({"user_id": user_id})
             for doc in cursor:
                 doc["_id"] = str(doc["_id"])
                 journals.append(doc)
@@ -1546,7 +1800,7 @@ def get_insights(view: str = "weekly", current_user: dict = Depends(get_current_
             existing_ids = {str(j.get("id")) for j in journals if "id" in j}
             for j in local_j:
                 if str(j.get("id")) not in existing_ids:
-                    if not j.get("user_id") or j.get("user_id") == user_id:
+                    if j.get("user_id") == user_id:
                         journals.append(j)
     except Exception as e:
         print(f"Local journal.json fallback error: {e}")
@@ -1775,6 +2029,28 @@ def get_insights(view: str = "weekly", current_user: dict = Depends(get_current_
     elif most_common_mood in ["Sad", "Negative"]:
         insight_summary = "You've been experiencing lower mood recently. Writing in your journal and reaching out can help process these feelings."
 
+    # Themes & AI reflection from the long-term memory notes (memory.py) and journal text
+    notes = memory.recent_notes(user_id, since=start_date, limit=30)
+    theme_counts = {}
+    for n in notes:
+        for t in n.get("themes", []):
+            theme_counts[t] = theme_counts.get(t, 0) + 1
+    themes = [{"name": t, "count": c} for t, c in sorted(theme_counts.items(), key=lambda x: -x[1])[:6]]
+    highlights = [
+        {
+            "title": n.get("title") or "Conversation",
+            "summary": n.get("recap") or n.get("summary", ""),
+            "date": n["updated_at"].strftime("%b %d") if isinstance(n.get("updated_at"), datetime) else "",
+            "mood": n.get("mood", ""),
+        }
+        for n in notes[:3] if n.get("summary")
+    ]
+
+    recent_journals = sorted(active_journals, key=lambda j: j.get("_dt") or datetime.min, reverse=True)[:8]
+    ai_summary = _ai_insight_summary(user_id, view, notes, recent_journals, emotion_counts, average_mood)
+    if ai_summary:
+        insight_summary = ai_summary
+
     return {
         "has_data": True,
         "view": view,
@@ -1786,8 +2062,62 @@ def get_insights(view: str = "weekly", current_user: dict = Depends(get_current_
         "best_day": best_day_str,
         "chart_data": chart_data,
         "emotion_distribution": emotion_distribution,
-        "insight_summary": insight_summary
+        "insight_summary": insight_summary,
+        "themes": themes,
+        "highlights": highlights
     }
+
+
+_INSIGHT_CACHE = {}
+
+def _ai_insight_summary(user_id, view, notes, journals, emotion_counts, average_mood):
+    """2-3 sentence personal reflection written by the LLM from this period's conversation notes and
+    journal entries. Cached until the underlying data changes; None if there is nothing to say or
+    the LLM is unavailable (the caller keeps its rule-based sentence)."""
+    if not notes and not journals:
+        return None
+
+    import hashlib
+    fingerprint = hashlib.md5("|".join(
+        [view, datetime.now().strftime("%Y-%m-%d")]
+        + [f"{n.get('conversation_id')}:{n.get('updated_at')}" for n in notes]
+        + [f"{j.get('_id') or j.get('id')}:{j.get('time')}" for j in journals]
+    ).encode("utf-8")).hexdigest()
+    cached = _INSIGHT_CACHE.get((user_id, view))
+    if cached and cached["fingerprint"] == fingerprint:
+        return cached["text"]
+
+    period = "week" if view == "weekly" else "month"
+    convo_lines = "\n".join(
+        f"- {n['updated_at'].strftime('%b %d') if isinstance(n.get('updated_at'), datetime) else ''} "
+        f"(mood {n.get('mood', '?')}; themes {', '.join(n.get('themes', []))}): {n.get('summary', '')}"
+        for n in notes[:10]
+    ) or "(none)"
+    journal_lines = "\n".join(
+        f"- {j['_dt'].strftime('%b %d') if j.get('_dt') else ''} (mood {j.get('mood') or 'not set'}): "
+        f"{(str(j.get('title') or '') + ' ' + str(j.get('text') or ''))[:300]}"
+        for j in journals
+    ) or "(none)"
+    moods = ", ".join(f"{k}: {v}" for k, v in sorted(emotion_counts.items(), key=lambda x: -x[1])) or "n/a"
+
+    prompt = (
+        f"You are MindEase, a warm wellbeing companion. Write a short personal reflection for the user's "
+        f"Insights page about their past {period}.\n\n"
+        f"Mood counts: {moods}. Average mood score: {average_mood}/10.\n"
+        f"AI Support conversation notes:\n{convo_lines}\n\n"
+        f"Journal entries:\n{journal_lines}\n\n"
+        "Write 2-3 sentences in second person (\"you\"). Name the main things that have been on their mind and "
+        "any pattern you notice (for example what tends to bring their mood down or lift it, or something that "
+        "helped). End with one gentle, specific suggestion. Warm and non-judgmental, never diagnostic, no "
+        "invented details, plain text only, no quotes or preamble."
+    )
+    from rag import complete_text
+    text = complete_text(prompt, max_tokens=700, temperature=0.5, timeout=12)
+    if not text or len(text) < 20:
+        return None
+    text = text.strip().strip('"')
+    _INSIGHT_CACHE[(user_id, view)] = {"fingerprint": fingerprint, "text": text}
+    return text
 
 
 # DASHBOARD & FEELING WHEEL ENDPOINTS
@@ -1840,6 +2170,299 @@ def save_mood_checkin(
     }
 
 
+# COPING PLAN QUESTIONNAIRE
+# Every dimension is rated 1 (struggling) to 5 (doing well), so an average can be read directly -
+# low average = more concern, no sign-flipping needed when building the plan.
+QUESTIONNAIRE_DIMENSIONS = {
+    "mood": "Overall mood the last few days",
+    "anxiety": "Calm, rather than anxious or on edge",
+    "sleep": "Sleep quality",
+    "energy": "Energy and motivation",
+    "support": "Feeling supported by people around them",
+    "hope": "Hopefulness that things will improve",
+}
+
+# User-facing question text, shown as-is for a brand-new user with no context yet. When there is
+# recent AI Support / journal / mood context, /questionnaire/prompts rewrites "label" (only) to
+# speak to what's actually going on for that person - "low"/"high" scale anchors stay fixed so the
+# 1-5 meaning never drifts.
+QUESTIONNAIRE_DEFAULT_QUESTIONS = {
+    "mood": {"label": "How has your overall mood been the last few days?", "low": "Very low", "high": "Very good"},
+    "anxiety": {"label": "How calm do you feel, as opposed to anxious or on edge?", "low": "Very anxious", "high": "Very calm"},
+    "sleep": {"label": "How has your sleep been?", "low": "Very poor", "high": "Very good"},
+    "energy": {"label": "How is your energy and motivation?", "low": "Very low", "high": "Very high"},
+    "support": {"label": "Do you feel supported by the people around you?", "low": "Not at all", "high": "Very supported"},
+    "hope": {"label": "How hopeful do you feel that things will improve?", "low": "Not hopeful", "high": "Very hopeful"},
+}
+
+# Used only when the LLM is unavailable or its reply cannot be parsed, keyed by the
+# lowest-scoring dimension so the fallback still points at the user's actual weak spot.
+FALLBACK_PLANS = {
+    "mood": {
+        "focus": "Lifting your mood gently",
+        "overview": "Your mood has been low lately. That's worth taking seriously, without rushing yourself to feel better overnight.",
+        "steps": [
+            {"title": "Name the feeling", "detail": "Write or say out loud what you're actually feeling right now - it takes some of its weight away."},
+            {"title": "Do one small enjoyable thing", "detail": "Pick something that used to feel good, even briefly, and let it be enough for today."},
+            {"title": "Talk it through with MindEase", "detail": "Share what's been going on in AI Support so the plan can keep adjusting to you."},
+        ],
+    },
+    "anxiety": {
+        "focus": "Easing the anxious edge",
+        "overview": "Things have been feeling anxious or on edge lately. Your nervous system can learn to settle again with small, repeated practice.",
+        "steps": [
+            {"title": "Try a short breathing reset", "detail": "A couple of minutes of slow breathing in Safe Place can lower the intensity enough to think clearly."},
+            {"title": "Name the worry specifically", "detail": "Vague anxiety feels bigger than named anxiety - write down exactly what you're worried about."},
+            {"title": "Keep today small", "detail": "Pick one manageable thing to get done today instead of everything on your mind."},
+        ],
+    },
+    "sleep": {
+        "focus": "Protecting your sleep",
+        "overview": "Your sleep has been rough recently, and that affects almost everything else - mood, focus, patience.",
+        "steps": [
+            {"title": "Set a wind-down cue", "detail": "Pick one small signal (dim lights, put the phone away) that tells your body it's time to slow down."},
+            {"title": "Keep a consistent wake time", "detail": "Even an imperfect night is easier to recover from when you get up around the same time."},
+            {"title": "Unload your mind before bed", "detail": "Jot down what's on your mind in your journal so it doesn't keep circling as you try to sleep."},
+        ],
+    },
+    "energy": {
+        "focus": "Rebuilding your energy",
+        "overview": "Your energy and motivation have been low. That's often the body asking for rest and smaller steps, not more pressure.",
+        "steps": [
+            {"title": "Shrink the next task", "detail": "Break whatever feels heaviest into a version so small it's almost impossible to refuse."},
+            {"title": "Move a little", "detail": "A short walk or stretch can lift energy more reliably than willpower alone."},
+            {"title": "Be honest about your capacity", "detail": "Let today's to-do list match the energy you actually have, not the energy you wish you had."},
+        ],
+    },
+    "support": {
+        "focus": "Feeling less alone",
+        "overview": "You've been feeling unsupported by the people around you, and that loneliness is real and heavy on its own.",
+        "steps": [
+            {"title": "Send one small message", "detail": "Reach out to one person with something low-pressure - it doesn't have to be a big conversation."},
+            {"title": "Name what you need", "detail": "Think about whether you need comfort, company, or practical help - it's easier to ask for the right thing."},
+            {"title": "Lean on MindEase in between", "detail": "Use AI Support to talk through what you're missing until that connection feels closer."},
+        ],
+    },
+    "hope": {
+        "focus": "Finding a little more hope",
+        "overview": "It's been hard to feel hopeful that things will improve. That feeling is understandable, and it isn't permanent.",
+        "steps": [
+            {"title": "Look for one counter-example", "detail": "Think of one time things did get better before, even slightly - hold onto that as evidence, not proof it'll stay bad."},
+            {"title": "Shrink the time horizon", "detail": "Instead of 'everything,' focus on getting through today in a way you can be proud of."},
+            {"title": "Keep the door open", "detail": "If things feel heavier than this plan can hold, reach out to someone you trust or a professional - that's a strength, not a failure."},
+        ],
+    },
+}
+
+
+class QuestionnaireRequest(BaseModel):
+    mood: int = Field(ge=1, le=5)
+    anxiety: int = Field(ge=1, le=5)
+    sleep: int = Field(ge=1, le=5)
+    energy: int = Field(ge=1, le=5)
+    support: int = Field(ge=1, le=5)
+    hope: int = Field(ge=1, le=5)
+    note: Optional[str] = None
+
+
+@app.post("/questionnaire")
+def submit_questionnaire(req: QuestionnaireRequest, current_user: dict = Depends(get_current_user)):
+    user_id_str = str(current_user["_id"])
+    record = {
+        "user_id": user_id_str,
+        "answers": {k: getattr(req, k) for k in QUESTIONNAIRE_DIMENSIONS},
+        "note": (req.note or "").strip()[:500],
+        "created_at": datetime.now(),
+    }
+    if db_manager.questionnaires is not None:
+        try:
+            db_manager.questionnaires.insert_one(record)
+        except Exception as e:
+            print(f"Error saving questionnaire: {e}")
+    return {"status": "success"}
+
+
+_questionnaire_prompt_cache = {}
+
+
+@app.get("/questionnaire/prompts")
+def get_questionnaire_prompts(current_user: dict = Depends(get_current_user)):
+    """Question text tailored to what's actually going on for this person right now, so the
+    check-in feels responsive rather than a fixed generic form. Falls back to the default wording
+    (QUESTIONNAIRE_DEFAULT_QUESTIONS) when there's no context yet or the LLM is unavailable - the
+    1-5 scale and its meaning never change, only the words asking about it."""
+    user_id_str = str(current_user["_id"])
+
+    memory_notes = memory.recent_notes(user_id_str, limit=3)
+    chats = []
+    if db_manager.chat_history is not None:
+        try:
+            chats = list(db_manager.chat_history.find({"user_id": user_id_str}).sort("_id", -1).limit(5))
+        except Exception as e:
+            print(f"Error reading chat_history for questionnaire prompts: {e}")
+    journals = []
+    if db_manager.journal_entries is not None:
+        try:
+            journals = list(db_manager.journal_entries.find({"user_id": user_id_str}).sort("_id", -1).limit(2))
+        except Exception as e:
+            print(f"Error reading journals for questionnaire prompts: {e}")
+
+    context_parts = []
+    if memory_notes:
+        context_parts.append("RECENT AI SUPPORT CONVERSATIONS (newest first):\n" + "\n".join(
+            f"- {n.get('summary', '')}" for n in memory_notes))
+    else:
+        chat_lines = [f"- \"{(c.get('message') or '').strip()[:200]}\""
+                      for c in chats[:3] if (c.get("message") or "").strip()]
+        if chat_lines:
+            context_parts.append("RECENT MESSAGES TO AI SUPPORT (newest first):\n" + "\n".join(chat_lines))
+    journal_lines = [f"- \"{(j.get('text') or j.get('content') or j.get('title') or '').strip()[:200]}\""
+                     for j in journals if (j.get("text") or j.get("content") or j.get("title") or "").strip()]
+    if journal_lines:
+        context_parts.append("RECENT JOURNAL ENTRIES (newest first):\n" + "\n".join(journal_lines))
+
+    if not context_parts:
+        return {"questions": QUESTIONNAIRE_DEFAULT_QUESTIONS, "personalized": False}
+
+    import hashlib
+    from rag import complete_text
+    fp_raw = (f"{chats[0]['_id'] if chats else 'c_none'}|"
+              f"{memory_notes[0].get('conversation_id') if memory_notes else 'n_none'}:{memory_notes[0].get('updated_at') if memory_notes else ''}|"
+              f"{journals[0]['_id'] if journals else 'j_none'}")
+    fingerprint = hashlib.md5(fp_raw.encode("utf-8")).hexdigest()
+    cached = _questionnaire_prompt_cache.get(user_id_str)
+    if cached and cached.get("fingerprint") == fingerprint:
+        return cached["result"]
+
+    formatted_context = "\n\n".join(context_parts)
+    llm_prompt = (
+        "You are MindEase, a compassionate wellness companion about to ask someone a short self check-in "
+        "before building their coping plan.\n\n"
+        f"{formatted_context}\n\n"
+        "Rewrite these 6 check-in questions so each one speaks to what's actually going on for this person, "
+        "based on the context above, while keeping the SAME underlying meaning (a 1-5 answer must still mean "
+        "the same thing it always did). Keep each question short (under 20 words) and answerable on its own "
+        "1 (struggling) to 5 (doing well) scale.\n\n"
+        + "\n".join(f'- {key}: "{QUESTIONNAIRE_DEFAULT_QUESTIONS[key]["label"]}"' for key in QUESTIONNAIRE_DIMENSIONS)
+        + "\n\nReturn ONLY a JSON object with exactly these keys, each mapped to the rewritten question string:\n"
+        '{"mood": "...", "anxiety": "...", "sleep": "...", "energy": "...", "support": "...", "hope": "..."}\n'
+        "Don't invent details that weren't mentioned. If nothing specific fits a question, keep that one close "
+        "to its original wording rather than forcing a connection."
+    )
+    result = {"questions": QUESTIONNAIRE_DEFAULT_QUESTIONS, "personalized": False}
+    ai_text = complete_text(llm_prompt, max_tokens=900, temperature=0.6, effort="low", json_mode=True, timeout=12)
+    if ai_text:
+        try:
+            parsed = json.loads(ai_text)
+            questions = {}
+            any_personalized = False
+            for key, default in QUESTIONNAIRE_DEFAULT_QUESTIONS.items():
+                label = parsed.get(key)
+                if isinstance(label, str) and label.strip():
+                    questions[key] = {"label": label.strip()[:200], "low": default["low"], "high": default["high"]}
+                    any_personalized = True
+                else:
+                    questions[key] = default
+            if any_personalized:
+                result = {"questions": questions, "personalized": True}
+        except Exception as e:
+            print(f"Questionnaire prompt JSON parse error: {e}")
+
+    _questionnaire_prompt_cache[user_id_str] = {"fingerprint": fingerprint, "result": result}
+    return result
+
+
+def _build_coping_plan(user_id_str, questionnaire, memory_notes, chats, journals, mood_records,
+                       now, format_relative_time, parse_dt):
+    """A short, personalised coping plan from the latest questionnaire plus recent AI Support
+    conversations, journal entries and mood check-ins. Cached per user like the daily reminder."""
+    if not questionnaire:
+        return {"has_questionnaire": False}
+
+    answers = questionnaire.get("answers") or {}
+    note = questionnaire.get("note") or ""
+    taken_at = questionnaire.get("created_at")
+
+    if not hasattr(get_dashboard_data, "plan_cache"):
+        get_dashboard_data.plan_cache = {}
+
+    import hashlib
+    latest_chat_fp = f"{chats[0]['_id']}:{chats[0].get('timestamp')}" if chats else "c_none"
+    latest_memory_fp = f"{memory_notes[0].get('conversation_id')}:{memory_notes[0].get('updated_at')}" if memory_notes else "n_none"
+    fp_raw = f"{questionnaire.get('_id')}|{latest_chat_fp}|{latest_memory_fp}|{now.strftime('%Y-%m-%d')}"
+    fingerprint = hashlib.md5(fp_raw.encode("utf-8")).hexdigest()
+
+    cached = get_dashboard_data.plan_cache.get(user_id_str)
+    if cached and cached.get("fingerprint") == fingerprint:
+        return cached["plan"]
+
+    def when(dt_val):
+        dt_val = parse_dt(dt_val)
+        return format_relative_time(dt_val) if dt_val != datetime.min else "recently"
+
+    ratings_lines = [f"- {label}: {answers.get(key, 3)}/5" for key, label in QUESTIONNAIRE_DIMENSIONS.items()]
+    average = sum(answers.get(k, 3) for k in QUESTIONNAIRE_DIMENSIONS) / max(len(QUESTIONNAIRE_DIMENSIONS), 1)
+    lowest_dim = min(QUESTIONNAIRE_DIMENSIONS, key=lambda k: answers.get(k, 3))
+
+    context_parts = [f"SELF CHECK-IN ({when(taken_at)}, 1 = struggling, 5 = doing well):\n" + "\n".join(ratings_lines)]
+    if note.strip():
+        context_parts.append(f"WHAT THEY SAID THEY WANT HELP WITH: \"{note.strip()[:400]}\"")
+    if memory_notes:
+        context_parts.append("RECENT AI SUPPORT CONVERSATIONS (newest first):\n" + "\n".join(
+            f"- {when(n.get('updated_at'))}: {n.get('summary','')}" for n in memory_notes))
+    else:
+        chat_lines = [f"- {when(c.get('timestamp'))}: \"{(c.get('message') or '').strip()[:200]}\""
+                      for c in chats[:3] if (c.get("message") or "").strip()]
+        if chat_lines:
+            context_parts.append("RECENT MESSAGES TO AI SUPPORT (newest first):\n" + "\n".join(chat_lines))
+    journal_lines = [f"- {when(j.get('created_at') or j.get('timestamp'))}: \"{(j.get('text') or j.get('content') or j.get('title') or '').strip()[:200]}\""
+                     for j in journals[:2] if (j.get("text") or j.get("content") or j.get("title") or "").strip()]
+    if journal_lines:
+        context_parts.append("RECENT JOURNAL ENTRIES (newest first):\n" + "\n".join(journal_lines))
+    formatted_context = "\n\n".join(context_parts)
+
+    plan = dict(FALLBACK_PLANS[lowest_dim])
+
+    from rag import complete_text
+    llm_prompt = (
+        "You are MindEase, a compassionate wellness companion helping a user build a short coping plan "
+        "so they can understand their own situation and know concretely what to do about it.\n\n"
+        f"{formatted_context}\n\n"
+        "Write the plan as a JSON object with exactly these keys:\n"
+        '{"focus": "...", "overview": "...", "steps": [{"title": "...", "detail": "..."}, ...]}\n\n'
+        "RULES:\n"
+        "- \"focus\": 3-6 words naming the main thing to work on right now, grounded in their own ratings and words "
+        "(e.g. \"Feeling closer to your family\"), never a clinical label.\n"
+        "- \"overview\": 2-3 warm sentences showing you understand their actual situation (combine the ratings with "
+        "the conversations/journal - do not just restate the numbers), and reassure them this is manageable.\n"
+        "- \"steps\": exactly 3 to 4 concrete, doable actions for the next few days. Each needs a short \"title\" "
+        "(3-6 words) and one supportive \"detail\" sentence explaining how or why, specific to their real situation - "
+        "never generic filler like \"practice self-care\" on its own.\n"
+        "- Never diagnose, never make medical claims, never promise outcomes you can't know.\n"
+        f"- Their average rating is {average:.1f}/5. If it is 2.0 or lower, gently make one step about continuing "
+        "to talk to MindEase AI Support or reaching out to a trusted person or professional - phrase it as care, not alarm.\n"
+        "- Output ONLY the JSON object. No markdown fences, no preamble."
+    )
+    # max_tokens covers hidden reasoning too (gpt-oss "thinks" before answering), so it needs real
+    # headroom above the short JSON reply itself, same as the chat LLM's own budget.
+    ai_plan = complete_text(llm_prompt, max_tokens=1500, temperature=0.6, effort="low", json_mode=True, timeout=15)
+    if ai_plan:
+        try:
+            parsed = json.loads(ai_plan)
+            steps = parsed.get("steps") or []
+            if parsed.get("focus") and parsed.get("overview") and isinstance(steps, list) and len(steps) >= 2:
+                clean_steps = [{"title": s.get("title", "").strip(), "detail": s.get("detail", "").strip()}
+                               for s in steps if s.get("title") and s.get("detail")]
+                if clean_steps:
+                    plan = {"focus": parsed["focus"].strip(), "overview": parsed["overview"].strip(), "steps": clean_steps}
+        except Exception as e:
+            print(f"Coping plan JSON parse error: {e}")
+
+    result = {"has_questionnaire": True, "taken_at": taken_at, **plan}
+    get_dashboard_data.plan_cache[user_id_str] = {"fingerprint": fingerprint, "plan": result}
+    return result
+
+
 @app.get("/dashboard")
 def get_dashboard_data(
     current_user: dict = Depends(get_current_user)
@@ -1881,6 +2504,14 @@ def get_dashboard_data(
             mood_records = list(db_manager.mood_records.find({"user_id": user_id_str}).sort("_id", -1).limit(30))
         except Exception as e:
             print(f"Error reading mood_records for dashboard: {e}")
+
+    latest_questionnaire = None
+    if db_manager.questionnaires is not None:
+        try:
+            latest_questionnaire = db_manager.questionnaires.find_one(
+                {"user_id": user_id_str}, sort=[("created_at", -1)])
+        except Exception as e:
+            print(f"Error reading questionnaire for dashboard: {e}")
 
     # CONTEXT EXTRACTION & RECENT USER-AUTHORED DATA PIPELINE
     def parse_dt(dt_val):
@@ -1945,13 +2576,44 @@ def get_dashboard_data(
     user_events.sort(key=lambda x: x["time"], reverse=True)
     latest_event = user_events[0] if user_events else None
 
+    def format_relative_time(dt_val):
+        if not dt_val:
+            return "Recently"
+        if isinstance(dt_val, str):
+            try:
+                dt_val = datetime.fromisoformat(dt_val.replace("Z", "+00:00"))
+            except Exception:
+                return dt_val[:16].replace("T", " ")
+        if hasattr(dt_val, "tzinfo") and dt_val.tzinfo is not None:
+            dt_val = dt_val.replace(tzinfo=None)
+        
+        diff = datetime.now() - dt_val
+        diff_days = diff.days
+        
+        if diff_days <= 0:
+            time_str = dt_val.strftime("%I:%M %p").lstrip("0")
+            return f"Today · {time_str}"
+        elif diff_days == 1:
+            time_str = dt_val.strftime("%I:%M %p").lstrip("0")
+            return f"Yesterday · {time_str}"
+        elif diff_days < 7:
+            return f"{diff_days} days ago"
+        else:
+            return dt_val.strftime("%b %d, %Y")
+
     # Compute composite context fingerprint across journals, user chats, and mood check-ins
     latest_journal_fp = f"{journals[0]['_id']}:{journals[0].get('created_at') or journals[0].get('timestamp')}" if journals else "j_none"
     latest_chat_fp = f"{chats[0]['_id']}:{chats[0].get('timestamp')}:{chats[0].get('message','')[:30]}" if chats else "c_none"
     latest_mood_fp = f"{mood_records[0]['_id']}:{mood_records[0].get('timestamp')}:{mood_records[0].get('core_emotion')}:{mood_records[0].get('specific_feeling')}:{mood_records[0].get('granular_feeling')}" if mood_records else "m_none"
     
+    # Long-term memory notes of recent AI Support conversations (updated in the background after
+    # each chat), so the reminder also refreshes once a conversation has been summarised.
+    memory_notes = memory.recent_notes(user_id_str, limit=3)
+    latest_memory_fp = f"{memory_notes[0].get('conversation_id')}:{memory_notes[0].get('updated_at')}" if memory_notes else "n_none"
+
     import hashlib
-    composite_raw = f"{latest_journal_fp}|{latest_chat_fp}|{latest_mood_fp}"
+    # The date is part of the fingerprint so the reminder is also refreshed every day.
+    composite_raw = f"{latest_journal_fp}|{latest_chat_fp}|{latest_mood_fp}|{latest_memory_fp}|{now.strftime('%Y-%m-%d')}"
     composite_fingerprint = hashlib.md5(composite_raw.encode("utf-8")).hexdigest()
 
     # Global cache check (Prevents redundant LLM calls & text jitter on dashboard reloads)
@@ -1985,21 +2647,45 @@ def get_dashboard_data(
         else:
             detected_tone = "neutral"
 
-        # Formulate internal structured context (Backend-internal only, never exposed raw)
+        # Formulate internal structured context (Backend-internal only, never exposed raw):
+        # the latest check-in, the last few journal entries and AI Support conversations.
+        def when(dt_val):
+            dt_val = parse_dt(dt_val)
+            return format_relative_time(dt_val) if dt_val != datetime.min else "recently"
+
+        # AI Support conversations are the primary driver of the reminder; journal entries and
+        # mood check-ins are only secondary, supporting context (put first in the prompt, and
+        # called out as PRIMARY/SECONDARY, so the LLM actually leans on the conversation).
         context_parts = []
+        if memory_notes:
+            context_parts.append("PRIMARY CONTEXT - RECENT AI SUPPORT CONVERSATIONS (newest first):\n" + "\n".join(
+                f"- {when(n.get('updated_at'))}: {n.get('summary','')}" for n in memory_notes))
+        else:
+            chat_lines = [f"- {when(c.get('timestamp'))}: \"{(c.get('message') or '').strip()[:200]}\""
+                          for c in chats[:3] if (c.get("message") or "").strip()]
+            if chat_lines:
+                context_parts.append("PRIMARY CONTEXT - RECENT MESSAGES TO AI SUPPORT (newest first):\n" + "\n".join(chat_lines))
+        has_chat_context = bool(context_parts)
+
+        secondary_parts = []
         if mood_records:
             mr0 = mood_records[0]
-            context_parts.append(f"CURRENT FEELING CHECK-IN: {mr0.get('core_emotion','')} → {mr0.get('specific_feeling','')} → {mr0.get('granular_feeling','')}")
-        if user_events:
-            for ev in user_events:
-                if ev["type"] == "ai_support":
-                    context_parts.append(f"RECENT USER CHAT MESSAGE: \"{ev['detail']}\"")
-                elif ev["type"] == "journal":
-                    context_parts.append(f"RECENT USER JOURNAL ENTRY: \"{ev['detail']}\"")
+            secondary_parts.append(f"LATEST FEELING CHECK-IN ({when(mr0.get('timestamp'))}): {mr0.get('core_emotion','')} → {mr0.get('specific_feeling','')} → {mr0.get('granular_feeling','')}")
+        journal_lines = []
+        for j in journals[:3]:
+            j_text = (j.get("text") or j.get("content") or j.get("title") or "").strip()
+            if j_text:
+                mood_tag = f", mood {j.get('mood')}" if j.get("mood") else ""
+                journal_lines.append(f"- {when(j.get('created_at') or j.get('timestamp'))}{mood_tag}: \"{j_text[:250]}\"")
+        if journal_lines:
+            secondary_parts.append("RECENT JOURNAL ENTRIES (newest first):\n" + "\n".join(journal_lines))
+        if secondary_parts:
+            label = "SECONDARY CONTEXT" if has_chat_context else "PRIMARY CONTEXT (no recent AI Support conversation)"
+            context_parts.append(f"{label}:\n" + "\n\n".join(secondary_parts))
         if latest_event:
-            context_parts.append(f"MOST RECENT EVENT ({latest_event['type']}): \"{latest_event['detail'][:100]}\"")
+            context_parts.append(f"MOST RECENT ACTIVITY: {latest_event['type'].replace('_', ' ')} ({when(latest_event.get('time'))})")
 
-        formatted_context = "\n".join(context_parts) if context_parts else "No recent activities recorded yet."
+        formatted_context = "\n\n".join(context_parts) if context_parts else "No recent activities recorded yet."
 
         # Determine dynamic category pill label
         if detected_tone == "positive":
@@ -2042,32 +2728,27 @@ def get_dashboard_data(
         reminder_message = fallback_msg
 
         # LLM Synthesis (if Groq LLM client is available)
-        try:
-            from rag import groq_client, RAG_AVAILABLE
-            if RAG_AVAILABLE and groq_client and os.environ.get("GROQ_API_KEY"):
-                llm_prompt = (
-                    f"You are MindEase, a compassionate emotional wellness companion.\n"
-                    f"Synthesize a 1-sentence, gentle, supportive, non-diagnostic daily reminder (max 22 words) for the user's home screen based on their latest context:\n\n"
-                    f"{formatted_context}\n\n"
-                    f"RULES:\n"
-                    f"- Acknowledge their recent context with warmth.\n"
-                    f"- If the user's context is positive, grateful, or peaceful, reflect that positive energy with gentle validation. Do NOT invent anxiety, stress, or conflict.\n"
-                    f"- If the user's context is reflective, offer gentle encouragement.\n"
-                    f"- If the user's context involves difficulty or conflict, offer compassionate, non-judgmental support without diagnosing or exaggerating.\n"
-                    f"- Output ONLY the 1-sentence reminder text. No quotes, no preamble."
-                )
-                completion = groq_client.chat.completions.create(
-                    model="openai/gpt-oss-120b",
-                    messages=[{"role": "user", "content": llm_prompt}],
-                    max_tokens=250,
-                    temperature=0.5,
-                    timeout=6,
-                )
-                ai_reminder = completion.choices[0].message.content.strip().replace('"', '')
-                if ai_reminder and len(ai_reminder) > 10:
+        if context_parts:
+            from rag import complete_text
+            llm_prompt = (
+                f"You are MindEase, a compassionate emotional wellness companion.\n"
+                f"Today is {now.strftime('%A, %d %B')}. Write the user's daily reminder for their home screen.\n\n"
+                f"{formatted_context}\n\n"
+                f"RULES:\n"
+                f"- Base the reminder mainly on the PRIMARY CONTEXT above (what they actually talked about with "
+                f"MindEase AI Support). Use the SECONDARY CONTEXT (journal, feeling check-ins) only to add a small "
+                f"supporting detail if it genuinely fits - never let it override or contradict what the conversation shows.\n"
+                f"- One sentence, at most 25 words, speaking to the user as \"you\".\n"
+                f"- Refer to something specific from the conversation (the newest matters most), so it clearly reflects their own week, without quoting private details word for word.\n"
+                f"- If their context is positive, grateful, or peaceful, reflect that with gentle validation. Do NOT invent anxiety, stress, or conflict.\n"
+                f"- If it involves difficulty or conflict, offer compassionate, non-judgmental encouragement for today without diagnosing or exaggerating.\n"
+                f"- Output ONLY the reminder text. No quotes, no preamble."
+            )
+            ai_reminder = complete_text(llm_prompt, max_tokens=500, temperature=0.6, timeout=10)
+            if ai_reminder:
+                ai_reminder = ai_reminder.strip().replace('"', '')
+                if len(ai_reminder) > 10:
                     reminder_message = ai_reminder
-        except Exception as e:
-            print(f"Dynamic LLM reminder synthesis fallback: {e}")
 
         # Update cache for this user
         get_dashboard_data.cache[user_id_str] = {
@@ -2076,32 +2757,11 @@ def get_dashboard_data(
             "category_pill": category_pill
         }
 
-    # TIMELINE & JOURNEY ACTIVITIES AGGREGATION
-    def format_relative_time(dt_val):
-        if not dt_val:
-            return "Recently"
-        if isinstance(dt_val, str):
-            try:
-                dt_val = datetime.fromisoformat(dt_val.replace("Z", "+00:00"))
-            except Exception:
-                return dt_val[:16].replace("T", " ")
-        if hasattr(dt_val, "tzinfo") and dt_val.tzinfo is not None:
-            dt_val = dt_val.replace(tzinfo=None)
-        
-        diff = datetime.now() - dt_val
-        diff_days = diff.days
-        
-        if diff_days <= 0:
-            time_str = dt_val.strftime("%I:%M %p").lstrip("0")
-            return f"Today · {time_str}"
-        elif diff_days == 1:
-            time_str = dt_val.strftime("%I:%M %p").lstrip("0")
-            return f"Yesterday · {time_str}"
-        elif diff_days < 7:
-            return f"{diff_days} days ago"
-        else:
-            return dt_val.strftime("%b %d, %Y")
+    # COPING PLAN (questionnaire + AI Support chat + journal/mood context)
+    coping_plan = _build_coping_plan(user_id_str, latest_questionnaire, memory_notes, chats, journals,
+                                      mood_records, now, format_relative_time, parse_dt)
 
+    # TIMELINE & JOURNEY ACTIVITIES AGGREGATION
     raw_journey = []
 
     # Mood Check-ins
@@ -2283,6 +2943,7 @@ def get_dashboard_data(
         "journey_activities": journey_activities,
         "a_moment_to_notice": a_moment_to_notice,
         "latest_checkin": latest_checkin,
+        "coping_plan": coping_plan,
         "suggested_actions": suggested_actions,
         "what_helped": what_helped,
         "weekly_timeline": weekly_timeline,

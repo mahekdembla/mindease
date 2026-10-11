@@ -8,17 +8,30 @@ import {
 
 import {
     sendChatMessage,
+    streamChatMessage,
     fetchConversations,
     fetchConversationMessages,
     deleteConversation,
+    sendSosAlert,
 } from "../../services/api";
 
 import AISidebar from "../../components/layout/AISidebar.jsx";
+
+// Renders **bold** spans in AI replies (everything else stays plain text; no HTML is injected)
+function formatReply(text) {
+    return (text || "").split(/(\*\*[^*\n]+\*\*)/g).map((part, i) =>
+        part.startsWith("**") && part.endsWith("**") && part.length > 4
+            ? <strong key={i}>{part.slice(2, -2)}</strong>
+            : part
+    );
+}
 
 function AISupport() {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    // True once the streamed reply has started arriving (hides the "Thinking..." bubble)
+    const [isStreaming, setIsStreaming] = useState(false);
 
     // Conversations state
     const [conversations, setConversations] = useState([]);
@@ -33,6 +46,8 @@ function AISupport() {
     const [contacts, setContacts] = useState([]);
     const [selectedContacts, setSelectedContacts] = useState([]);
     const [sosSent, setSosSent] = useState(false);
+    // Result of the last SOS request: { simulated, message } (simulated = server had no email set up)
+    const [sosResult, setSosResult] = useState(null);
     const [dismissedSafety, setDismissedSafety] = useState(
         () => JSON.parse(localStorage.getItem("dismissedSafety") || "[]")
     );
@@ -166,6 +181,7 @@ function AISupport() {
             return;
         }
         setSosSent(false);
+        setSosResult(null);
         setSelectedContacts(contacts.map((c) => c.id));
         setSosModalOpen(true);
     };
@@ -175,23 +191,22 @@ function AISupport() {
         const selectedEmails = contacts.filter((c) => selectedContacts.includes(c.id)).map((c) => c.email);
 
         try {
-            await fetch("http://127.0.0.1:8000/api/sos", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ emails: selectedEmails }),
-            });
+            const result = await sendSosAlert(selectedEmails);
+            setSosResult(result);
 
-            const activities = JSON.parse(localStorage.getItem("safetyActivities")) || [];
-            activities.push({
-                title: "SOS Alert Sent",
-                description: `Sent urgent safety email to ${selectedContacts.length} trusted contact(s).`,
-                timestamp: Date.now(),
-                date: new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString(),
-            });
-            localStorage.setItem("safetyActivities", JSON.stringify(activities));
+            if (!result.simulated) {
+                const activities = JSON.parse(localStorage.getItem("safetyActivities")) || [];
+                activities.push({
+                    title: "SOS Alert Sent",
+                    description: `Sent urgent safety email to ${result.sent} trusted contact(s).`,
+                    timestamp: Date.now(),
+                    date: new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString(),
+                });
+                localStorage.setItem("safetyActivities", JSON.stringify(activities));
+                setTimeout(() => setSosModalOpen(false), 2000);
+            }
 
             setSosSent(true);
-            setTimeout(() => setSosModalOpen(false), 2000);
         } catch (error) {
             alert("Failed to send SOS: " + error.message);
         } finally {
@@ -244,8 +259,28 @@ function AISupport() {
         setInput("");
         setIsLoading(true);
 
+        let streamStarted = false;
         try {
-            const data = await sendChatMessage(userText, activeConversationId);
+            let data;
+            try {
+                // Stream the reply so it appears as it is written
+                data = await streamChatMessage(userText, activeConversationId, (piece) => {
+                    if (!streamStarted) {
+                        streamStarted = true;
+                        setIsStreaming(true);
+                        setMessages((prev) => [...prev, { text: piece, sender: "ai", streaming: true }]);
+                    } else {
+                        setMessages((prev) => {
+                            const last = prev[prev.length - 1];
+                            return [...prev.slice(0, -1), { ...last, text: last.text + piece }];
+                        });
+                    }
+                });
+            } catch (streamError) {
+                if (streamError.receivedText) throw streamError;
+                // Streaming unavailable (older backend, buffering proxy): use the regular endpoint
+                data = await sendChatMessage(userText, activeConversationId);
+            }
 
             if (data.conversation_id) {
                 setActiveConversationId(data.conversation_id);
@@ -257,15 +292,26 @@ function AISupport() {
             const aiSafetyEnabled = localStorage.getItem("aiSafety") !== "false";
 
             if (aiSafetyEnabled && data.safety?.riskLevel === "HIGH" && localStorage.getItem("autoSos") === "true") {
-                const activities = JSON.parse(localStorage.getItem("safetyActivities")) || [];
-                activities.push({
-                    title: "Automatic SOS Triggered",
-                    description: "High risk detected. Sent automatic safety check to trusted contacts.",
-                    timestamp: Date.now(),
-                    date: new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString(),
-                });
-                localStorage.setItem("safetyActivities", JSON.stringify(activities));
-                alert("Automatic SOS has notified your Safe Place contacts.");
+                // Actually send the alert, and only claim success when an email went out.
+                sendSosAlert([], true)
+                    .then((result) => {
+                        if (result.simulated) {
+                            alert("Automatic SOS could not email your contacts (email is not set up on the server). Please reach out to someone you trust directly.");
+                            return;
+                        }
+                        const activities = JSON.parse(localStorage.getItem("safetyActivities")) || [];
+                        activities.push({
+                            title: "Automatic SOS Triggered",
+                            description: `High risk detected. Sent automatic safety email to ${result.sent} trusted contact(s).`,
+                            timestamp: Date.now(),
+                            date: new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString(),
+                        });
+                        localStorage.setItem("safetyActivities", JSON.stringify(activities));
+                        alert("Automatic SOS has notified your Safe Place contacts.");
+                    })
+                    .catch((err) => {
+                        alert(`Automatic SOS could not be sent: ${err.message} Please reach out to someone you trust directly.`);
+                    });
             }
 
             const aiMessage = {
@@ -277,7 +323,8 @@ function AISupport() {
                 safety: aiSafetyEnabled ? data.safety : undefined,
             };
 
-            setMessages((prev) => [...prev, aiMessage]);
+            // Replace the streamed draft with the final message (adds emotion + safety info)
+            setMessages((prev) => (streamStarted ? [...prev.slice(0, -1), aiMessage] : [...prev, aiMessage]));
 
             // Refresh conversations list to update titles/ordering
             loadConversations(false); // sidebar refresh (not awaited)
@@ -285,13 +332,22 @@ function AISupport() {
             console.error("Backend error:", error);
 
             const errorMessage = {
-                text: "I'm having trouble connecting right now. Please try again in a moment. 💜",
+                text: streamStarted
+                    ? "My reply got interrupted. Please try sending that again. 💜"
+                    : "I'm having trouble connecting right now. Please try again in a moment. 💜",
                 sender: "ai",
             };
 
-            setMessages((prev) => [...prev, errorMessage]);
+            setMessages((prev) => {
+                // Keep whatever part of the reply already arrived, but stop its typing cursor
+                const settled = streamStarted
+                    ? [...prev.slice(0, -1), { ...prev[prev.length - 1], streaming: false }]
+                    : prev;
+                return [...settled, errorMessage];
+            });
         } finally {
             setIsLoading(false);
+            setIsStreaming(false);
         }
     };
 
@@ -392,13 +448,14 @@ function AISupport() {
                                 } max-w-xl`}
                             >
                                 <div
-                                    className={`p-3.5 rounded-2xl text-sm leading-relaxed ${
+                                    className={`p-3.5 rounded-2xl text-sm leading-relaxed whitespace-pre-line ${
                                         msg.sender === "user"
                                             ? "bg-primary text-white rounded-br-xs"
                                             : "bg-primaryLight text-textPrimary rounded-bl-xs"
                                     }`}
                                 >
-                                    {msg.text}
+                                    {msg.sender === "ai" ? formatReply(msg.text) : msg.text}
+                                    {msg.streaming && <span className="inline-block ml-0.5 animate-pulse">▍</span>}
                                 </div>
 
                                 {msg.sender === "ai" && isMediumRisk && (
@@ -439,7 +496,7 @@ function AISupport() {
                     })}
 
                     {/* Thinking Indicator */}
-                    {isLoading && (
+                    {isLoading && !isStreaming && (
                         <div className="max-w-md p-3.5 rounded-2xl rounded-bl-xs text-xs bg-primaryLight text-textPrimary self-start animate-pulse">
                             Thinking... 💭
                         </div>
@@ -538,15 +595,33 @@ function AISupport() {
                                 </div>
                             </>
                         ) : (
-                            <div className="text-center py-8">
-                                <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
-                                    ✓
+                            sosResult?.simulated ? (
+                                <div className="text-center py-8">
+                                    <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                                        !
+                                    </div>
+                                    <h2 className="text-xl font-bold mb-2">Email Not Sent</h2>
+                                    <p className="text-textSecondary mb-4">
+                                        {sosResult.message} Please call or message your trusted contact directly, or reach local emergency services.
+                                    </p>
+                                    <button
+                                        onClick={() => setSosModalOpen(false)}
+                                        className="bg-gray-100 text-gray-700 px-6 py-2 rounded-xl font-medium hover:bg-gray-200 transition"
+                                    >
+                                        Close
+                                    </button>
                                 </div>
-                                <h2 className="text-xl font-bold mb-2">Message Sent</h2>
-                                <p className="text-textSecondary">
-                                    Your trusted contacts have been notified. Please hold on, someone will reach out soon.
-                                </p>
-                            </div>
+                            ) : (
+                                <div className="text-center py-8">
+                                    <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                                        ✓
+                                    </div>
+                                    <h2 className="text-xl font-bold mb-2">Message Sent</h2>
+                                    <p className="text-textSecondary">
+                                        Your trusted contacts have been notified. Please hold on, someone will reach out soon.
+                                    </p>
+                                </div>
+                            )
                         )}
                     </div>
                 </div>

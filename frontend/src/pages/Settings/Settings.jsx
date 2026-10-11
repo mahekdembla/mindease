@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { logoutUser, updateProfile } from "../../services/api";
 import {
     faFloppyDisk,
     faUserPlus,
@@ -50,7 +51,7 @@ function Settings() {
     // SAVE PROFILE
     // =========================
 
-    const handleSave = () => {
+    const handleSave = async () => {
         const currentUser = JSON.parse(
             localStorage.getItem("currentUser")
         );
@@ -60,49 +61,19 @@ function Settings() {
             return;
         }
 
-        const users =
-            JSON.parse(
-                localStorage.getItem("users")
-            ) || [];
-
-        const updatedUsers = users.map(
-            (user) => {
-                if (
-                    user.email.toLowerCase() ===
-                    currentUser.email.toLowerCase()
-                ) {
-                    return {
-                        ...user,
-                        name: name,
-                        email: email,
-                    };
-                }
-
-                return user;
-            }
-        );
-
-        // Save updated users
-        localStorage.setItem(
-            "users",
-            JSON.stringify(updatedUsers)
-        );
-
-        // Update current user
-        const updatedCurrentUser = {
-            ...currentUser,
-            name: name,
-            email: email,
-        };
-
-        localStorage.setItem(
-            "currentUser",
-            JSON.stringify(
-                updatedCurrentUser
-            )
-        );
-
-        alert("Profile updated");
+        try {
+            // Saved on the server so the change survives logout and other devices
+            const updatedUser = await updateProfile(name, email);
+            localStorage.setItem(
+                "currentUser",
+                JSON.stringify({ ...currentUser, ...updatedUser })
+            );
+            setName(updatedUser.name || "");
+            setEmail(updatedUser.email || "");
+            alert("Profile updated");
+        } catch (err) {
+            alert(err.message);
+        }
     };
 
     // =========================
@@ -127,10 +98,9 @@ function Settings() {
     // LOGOUT
     // =========================
 
-    const logout = () => {
-        localStorage.removeItem(
-            "currentUser"
-        );
+    const logout = async () => {
+        // Revokes the session on the server and clears the stored token + user
+        await logoutUser();
 
         window.location.href = "/";
     };

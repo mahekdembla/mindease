@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faTrash, faShieldHeart } from "@fortawesome/free-solid-svg-icons";
+import { API_URL } from "../../services/api";
 
 function SafePlace() {
   const [contacts, setContacts] = useState([]);
@@ -12,7 +13,7 @@ function SafePlace() {
   useEffect(() => {
     const loadContacts = async () => {
       try {
-        const res = await fetch("http://127.0.0.1:8000/api/contacts", {
+        const res = await fetch(`${API_URL}/api/contacts`, {
           credentials: "include",
           headers: {
             "Authorization": `Bearer ${localStorage.getItem("mindease_token") || ""}`
@@ -41,7 +42,7 @@ function SafePlace() {
     if (!newContactName.trim() || !newContactEmail.trim()) return;
     
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/contacts", {
+      const res = await fetch(`${API_URL}/api/contacts`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -82,7 +83,7 @@ function SafePlace() {
   
   const handleDeleteContact = async (id) => {
     try {
-      await fetch(`http://127.0.0.1:8000/api/contacts/${id}`, {
+      await fetch(`${API_URL}/api/contacts/${id}`, {
         method: "DELETE",
         credentials: "include",
         headers: {
@@ -111,7 +112,7 @@ function SafePlace() {
     localStorage.setItem("trustedContacts", JSON.stringify(updated));
 
     try {
-      await fetch(`http://127.0.0.1:8000/api/contacts/${id}`, {
+      await fetch(`${API_URL}/api/contacts/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

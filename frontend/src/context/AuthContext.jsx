@@ -228,22 +228,3 @@ export function useAuth() {
 }
 
 export default AuthContext;
-
-// Example handleLogin function in AuthContext.jsx or Login component
-const handleLogin = async (email, password) => {
-  const formData = new URLSearchParams();
-  formData.append('username', email); // OAuth2 expects 'username'
-  formData.append('password', password);
-
-  const response = await fetch('http://localhost:8000/api/auth/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: formData,
-  });
-
-  if (!response.ok) throw new Error('Login failed');
-
-  const data = await response.json();
-  localStorage.setItem('token', data.access_token);
-  setUser({ email: data.email });
-};

@@ -18,7 +18,7 @@ services:
     name: mindease-backend
     runtime: python
     rootDir: backend          # Render runs from the repo root; backend/ is the app root.
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install -r requirements.txt && python training/repair_model_dirs.py   # restores the fine-tuned models' config/tokenizer (not in git)
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     plan: free
     autoDeploy: true

@@ -9,6 +9,7 @@ import {
   faXmark,
   faVideo,
 } from "@fortawesome/free-solid-svg-icons";
+import { API_URL } from "../../services/api";
 
 function YouTubeView({ onBack }) {
   const [videos, setVideos] = useState([]);
@@ -32,7 +33,7 @@ function YouTubeView({ onBack }) {
       setIsLoading(true);
       setError(null);
       try {
-        const res = await fetch("http://127.0.0.1:8000/api/content/youtube");
+        const res = await fetch(`${API_URL}/api/content/youtube`);
         if (res.ok) {
           const result = await res.json();
           setVideos(result.data || []);

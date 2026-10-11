@@ -59,7 +59,7 @@ function CrisisModal({ isOpen, onClose }) {
         {/* Support Options List */}
         <div className="space-y-3.5 mb-5">
           
-          {/* Option 1: 988 Call Hotline */}
+          {/* Option 1: Tele-MANAS (India's national mental health helpline) */}
           <div className="group border border-purple-100 bg-purple-50/50 hover:bg-purple-50 hover:border-purple-200 rounded-2xl p-4 transition-all duration-200 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3.5">
               <div className="w-11 h-11 rounded-xl bg-purple-600 text-white flex items-center justify-center shadow-md shrink-0 group-hover:scale-105 transition-transform duration-200">
@@ -67,27 +67,27 @@ function CrisisModal({ isOpen, onClose }) {
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-slate-900 text-base">National Crisis Hotline</h3>
+                  <h3 className="font-semibold text-slate-900 text-base">Tele-MANAS</h3>
                   <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-purple-200/70 text-purple-800">
                     24/7 Call
                   </span>
                 </div>
                 <p className="text-xl font-extrabold text-purple-700 tracking-wide mt-0.5">
-                  988
+                  14416 <span className="text-sm font-semibold text-purple-500">or</span> 1800-891-4416
                 </p>
-                <p className="text-xs text-slate-500">Free, confidential support across the US & Canada</p>
+                <p className="text-xs text-slate-500">India's free, confidential govt. mental health helpline</p>
               </div>
             </div>
-            
+
             <a
-              href="tel:988"
+              href="tel:14416"
               className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-medium text-sm shadow-sm transition-all duration-150 shrink-0 text-center whitespace-nowrap active:scale-95"
             >
-              Call 988
+              Call 14416
             </a>
           </div>
 
-          {/* Option 2: 741741 Text Line */}
+          {/* Option 2: KIRAN Mental Health Helpline */}
           <div className="group border border-indigo-100 bg-indigo-50/50 hover:bg-indigo-50 hover:border-indigo-200 rounded-2xl p-4 transition-all duration-200 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3.5">
               <div className="w-11 h-11 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md shrink-0 group-hover:scale-105 transition-transform duration-200">
@@ -95,23 +95,23 @@ function CrisisModal({ isOpen, onClose }) {
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-slate-900 text-base">Crisis Text Line</h3>
+                  <h3 className="font-semibold text-slate-900 text-base">KIRAN Helpline</h3>
                   <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-indigo-200/70 text-indigo-800">
-                    24/7 Text
+                    24/7 Call
                   </span>
                 </div>
-                <p className="text-sm font-semibold text-indigo-700 mt-0.5">
-                  Text <span className="font-extrabold underline decoration-indigo-300">HELLO</span> to <span className="font-extrabold text-indigo-900">741741</span>
+                <p className="text-xl font-extrabold text-indigo-700 tracking-wide mt-0.5">
+                  1800-599-0019
                 </p>
-                <p className="text-xs text-slate-500">Connect with a trained crisis counselor via text</p>
+                <p className="text-xs text-slate-500">Govt. of India toll-free helpline, multiple languages</p>
               </div>
             </div>
-            
+
             <a
-              href="sms:741741?body=HELLO"
+              href="tel:18005990019"
               className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm shadow-sm transition-all duration-150 shrink-0 text-center whitespace-nowrap active:scale-95"
             >
-              Text Now
+              Call Now
             </a>
           </div>
 
@@ -121,7 +121,7 @@ function CrisisModal({ isOpen, onClose }) {
         <div className="bg-slate-100/90 border border-slate-200 rounded-2xl p-3.5 flex items-start gap-3 text-xs text-slate-600 leading-relaxed mb-6">
           <FontAwesomeIcon icon={faShieldHeart} className="text-slate-400 text-base mt-0.5 shrink-0" />
           <div>
-            <strong className="font-semibold text-slate-800">Important Note:</strong> MindEase is designed to aid your self-care journey and is not a substitute for professional mental health services. If you are in immediate physical danger, please contact local emergency services (911 / 112) immediately.
+            <strong className="font-semibold text-slate-800">Important Note:</strong> MindEase is designed to aid your self-care journey and is not a substitute for professional mental health services. If you are in immediate physical danger, please contact local emergency services (112) immediately.
           </div>
         </div>
 

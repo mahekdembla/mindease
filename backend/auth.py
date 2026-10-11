@@ -17,7 +17,12 @@ except Exception:
 from database.mongodb import db_manager
 
 # Secret Configuration
-JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "mindease_secure_jwt_secret_key_2026")
+_DEFAULT_JWT_SECRET = "mindease_secure_jwt_secret_key_2026"
+JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY") or _DEFAULT_JWT_SECRET
+if JWT_SECRET_KEY == _DEFAULT_JWT_SECRET:
+    # Kept as a fallback so local setups keep working, but anyone who reads this file could
+    # forge login tokens for a deployment that relies on it.
+    print("WARNING: JWT_SECRET_KEY is not set - using the public default. Set it in backend/.env before deploying.")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_DAYS = 7
 

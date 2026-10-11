@@ -89,6 +89,9 @@ function Insights() {
     const mostMood = insightsData?.most_common_mood ?? "-";
     const bestDay = insightsData?.best_day ?? "-";
     const insightSummary = insightsData?.insight_summary || "Keep tracking your emotions to better understand your wellbeing over time.";
+    // From MindEase's memory of AI Support conversations in this period
+    const themes = insightsData?.themes ?? [];
+    const highlights = insightsData?.highlights ?? [];
 
     return (
         <div className="p-6 sm:p-8 w-full min-h-screen bg-background relative overflow-y-auto">
@@ -301,6 +304,44 @@ function Insights() {
                     <p className="text-xs sm:text-sm font-medium text-slate-700 leading-relaxed">
                         {insightSummary}
                     </p>
+
+                    {themes.length > 0 && (
+                        <div className="mt-4">
+                            <h3 className="text-[11px] uppercase tracking-wider font-bold text-purple-800 mb-2">
+                                What's been on your mind
+                            </h3>
+                            <div className="flex flex-wrap gap-2">
+                                {themes.map((t) => (
+                                    <span
+                                        key={t.name}
+                                        className="text-xs font-semibold text-purple-800 bg-white border border-purple-200 px-3 py-1 rounded-full capitalize"
+                                    >
+                                        {t.name}
+                                        {t.count > 1 && <span className="text-purple-400 ml-1">×{t.count}</span>}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {highlights.length > 0 && (
+                        <div className="mt-4">
+                            <h3 className="text-[11px] uppercase tracking-wider font-bold text-purple-800 mb-2">
+                                Recent conversations with MindEase
+                            </h3>
+                            <ul className="space-y-2">
+                                {highlights.map((h, i) => (
+                                    <li key={i} className="bg-white/80 border border-purple-100 rounded-xl p-3">
+                                        <div className="flex items-center justify-between gap-2 mb-1">
+                                            <span className="text-xs font-bold text-slate-700 truncate">{h.title}</span>
+                                            <span className="text-[11px] text-slate-400 shrink-0">{h.date}</span>
+                                        </div>
+                                        <p className="text-xs text-slate-600 leading-relaxed">{h.summary}</p>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
                 </div>
 
             </div>

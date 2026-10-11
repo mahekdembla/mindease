@@ -123,6 +123,10 @@ class MongoDBManager:
     def safety_activities(self) -> Optional[Any]:
         return self.get_collection("safety_activities")
 
+    @property
+    def questionnaires(self) -> Optional[Any]:
+        return self.get_collection("questionnaires")
+
     def ensure_indexes(self):
         """Create necessary indexes for performance."""
         db = self.db
@@ -146,6 +150,12 @@ class MongoDBManager:
             db.trusted_contacts.create_index([("user_id", ASCENDING)])
             db.safety_activities.create_index([("user_id", ASCENDING)])
             db.mood_records.create_index([("user_id", ASCENDING)])
+            db.questionnaires.create_index([("user_id", ASCENDING), ("created_at", -1)])
+
+            # long-term memory notes (memory.py): one per user + conversation
+            db.conversation_memory.create_index(
+                [("user_id", ASCENDING), ("conversation_id", ASCENDING)], unique=True)
+            db.conversation_memory.create_index([("user_id", ASCENDING), ("updated_at", -1)])
             logger.info("MongoDB indexes verified successfully.")
         except Exception as e:
             logger.warning(f"Could not create indexes: {e}")

@@ -8,6 +8,7 @@ import {
   faClock,
   faUser,
 } from "@fortawesome/free-solid-svg-icons";
+import { API_URL } from "../../services/api";
 
 function StoriesView({ onBack }) {
   const [stories, setStories] = useState([]);
@@ -20,7 +21,7 @@ function StoriesView({ onBack }) {
       setIsLoading(true);
       setError(null);
       try {
-        const res = await fetch("http://127.0.0.1:8000/api/content/stories");
+        const res = await fetch(`${API_URL}/api/content/stories`);
         if (res.ok) {
           const result = await res.json();
           setStories(result.data || []);
