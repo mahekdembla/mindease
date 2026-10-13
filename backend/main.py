@@ -744,8 +744,15 @@ def _safety(level, confidence, signals):
 def _hard_stop_hit(text_lower):
     """True if the message contains explicit self-harm language about the speaker."""
     scan = re.sub(DIE_IDIOMS, " ", text_lower)          # "die of embarrassment" is not a risk phrase
+
+    # Explicit denial / negation ("not thinking of suicide", "not going to hurt myself", "no suicidal thoughts")
+    negation_pattern = r"\b(?:not|no|never|don't|dont|am not|ain't|without)\s+(?:having|thinking\s+of|planning|feeling|any)?\s*(?:suicid|kill|hurt|harm|die|ending my life)"
+    is_negated = re.search(negation_pattern, scan) is not None
+
     hits = {p for p in HARD_STOP_PHRASES if p in scan}
     if not hits:
+        return False
+    if is_negated:
         return False
     if hits <= AMBIGUOUS_HARD_STOP:                      # only "suicide"/"overdose"/"self harm"
         return re.search(FIRST_PERSON, scan) is not None
@@ -937,12 +944,34 @@ def send_sos(req: SosRequest, current_user: dict = Depends(get_current_user)):
             "message": "SOS email is not configured on the server, so no email was sent."
         }
 
-    first_name = (current_user.get("name") or "Your friend").split(" ")[0]
-    subject = "MindEase SOS Alert"
+    user_name = current_user.get("name") or "A MindEase User"
+    user_email = current_user.get("email") or "Not provided"
+    first_name = user_name.split(" ")[0]
+    subject = f"URGENT: MindEase Safety Alert from {user_name}"
     body = f"""
-    <h2>MindEase SOS Alert</h2>
-    <p>{first_name} is not feeling okay right now and has indicated through MindEase that they may need immediate support.</p>
-    <p><strong>Please check on them as soon as you can.</strong></p>
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+        <div style="background-color: #ef4444; color: white; padding: 12px 20px; border-radius: 8px; font-weight: bold; font-size: 18px; margin-bottom: 20px;">
+            ⚠️ MindEase Immediate Safety Alert
+        </div>
+        <p style="font-size: 16px; color: #1e293b; line-height: 1.5;">
+            <strong>{user_name}</strong> (<a href="mailto:{user_email}" style="color: #6366f1;">{user_email}</a>) has listed you as their trusted emergency contact and triggered an SOS alert via MindEase.
+        </p>
+        <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 16px; margin: 20px 0; border-radius: 4px;">
+            <p style="margin: 0; color: #991b1b; font-size: 15px; font-weight: 600;">
+                {first_name} indicated that they are feeling overwhelmed or unsafe right now and may need urgent emotional support.
+            </p>
+        </div>
+        <p style="font-size: 15px; color: #334155; line-height: 1.6;">
+            <strong>What you can do:</strong><br>
+            • Reply directly to this email to reach {first_name} ({user_email})<br>
+            • Call or message them immediately to check on their well-being<br>
+            • If you are concerned for their immediate physical safety, reach out to local emergency services or national crisis helplines (e.g., Tele-MANAS at 14416 / 1800-891-4416 in India, or 988 in the US/Canada).
+        </p>
+        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;">
+        <p style="font-size: 12px; color: #64748b; margin: 0;">
+            This automated alert was sent via MindEase on behalf of {user_name} ({user_email}).
+        </p>
+    </div>
     """
 
     try:
@@ -952,8 +981,10 @@ def send_sos(req: SosRequest, current_user: dict = Depends(get_current_user)):
 
         for recipient in recipients:
             msg = MIMEMultipart()
-            msg["From"] = sender_email
+            msg["From"] = f"{user_name} via MindEase <{sender_email}>"
             msg["To"] = recipient
+            if user_email and "@" in user_email:
+                msg["Reply-To"] = f"{user_name} <{user_email}>"
             msg["Subject"] = subject
             msg.attach(MIMEText(body, "html"))
 
@@ -962,23 +993,27 @@ def send_sos(req: SosRequest, current_user: dict = Depends(get_current_user)):
         server.quit()
     except Exception as e:
         print(f"Failed to send SOS email: {e}")
-        raise HTTPException(status_code=502, detail="Could not send the SOS email. Please contact someone directly.")
+        raise HTTPException(status_code=502, detail=f"Could not send the SOS email: {str(e)}")
 
     if db_manager.safety_activities is not None:
         try:
             db_manager.safety_activities.insert_one({
                 "user_id": user_id,
                 "type": "sos_automatic" if req.automatic else "sos_manual",
-                "recipients": len(recipients),
-                "timestamp": datetime.now()
+                "recipients": recipients,
+                "recipient_count": len(recipients),
+                "timestamp": datetime.now(),
+                "title": "SOS Alert Sent",
+                "description": f"Emergency email sent to: {', '.join(recipients)}"
             })
         except Exception:
             pass
 
     return {
         "sent": len(recipients),
+        "recipients": recipients,
         "simulated": False,
-        "message": f"Successfully sent SOS to {len(recipients)} contact(s)."
+        "message": f"Successfully sent SOS email to {len(recipients)} contact(s)."
     }
 
 
@@ -1775,6 +1810,40 @@ def delete_contact(contact_id: str, current_user: dict = Depends(get_current_use
     if res.deleted_count > 0:
         return {"message": "Contact deleted successfully"}
     raise HTTPException(status_code=404, detail="Contact not found")
+
+
+@app.get("/api/safety-activities")
+def get_safety_activities(current_user: dict = Depends(get_current_user)):
+    user_id = str(current_user["_id"])
+    activities_col = db_manager.safety_activities
+    if not db_manager.is_connected() or activities_col is None:
+        return []
+    try:
+        cursor = activities_col.find({"user_id": user_id}).sort("timestamp", -1).limit(20)
+        results = []
+        for doc in cursor:
+            results.append({
+                "id": str(doc["_id"]),
+                "type": doc.get("type", "sos"),
+                "title": doc.get("title", "Safety Action"),
+                "description": doc.get("description", ""),
+                "recipients": doc.get("recipients", []),
+                "date": doc.get("timestamp").strftime("%b %d, %Y %I:%M %p") if isinstance(doc.get("timestamp"), datetime) else str(doc.get("timestamp", ""))
+            })
+        return results
+    except Exception as e:
+        print(f"Error fetching safety activities: {e}")
+        return []
+
+
+@app.get("/api/safety-status")
+def get_safety_status(current_user: dict = Depends(get_current_user)):
+    sender_email = (os.environ.get("SENDER_EMAIL") or "").strip()
+    sender_pass = (os.environ.get("SENDER_PASSWORD") or "").strip()
+    return {
+        "email_configured": bool(sender_email and sender_pass),
+        "sender_email": sender_email if sender_email else None
+    }
 
 
 # INSIGHTS ENDPOINT (USER ISOLATED & CONSOLIDATED DATA TRACING)
@@ -2994,6 +3063,15 @@ if os.environ.get("TIMING_LOGS") == "1":
         return wrapper
 
     evaluate_safety = _timed(evaluate_safety, "safety check")
+    generate_response = _timed(generate_response, "reply (retrieval + LLM)")
+    save_chat = _timed(save_chat, "save to database")
+
+    @app.middleware("http")
+    async def _log_request_time(request, call_next):
+        t = _time.perf_counter()
+        response = await call_next(request)
+        print(f"[timing] {request.method} {request.url.path}: {_time.perf_counter() - t:.2f}s total", flush=True)
+        return response
     generate_response = _timed(generate_response, "reply (retrieval + LLM)")
     save_chat = _timed(save_chat, "save to database")
 

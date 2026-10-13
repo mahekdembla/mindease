@@ -89,7 +89,10 @@ class MongoDBManager:
             self._is_connected = False
 
     def is_connected(self) -> bool:
-        return self._is_connected and self.db is not None
+        if self._is_connected and self.db is not None:
+            return True
+        # Try reconnecting if previous connection timed out or network changed
+        return self.connect_db()
 
     def get_database(self) -> Optional[Any]:
         return self.db

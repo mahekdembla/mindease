@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -8,8 +9,10 @@ import {
   faClock,
   faLocationDot,
   faLanguage,
+  faShieldHeart,
 } from "@fortawesome/free-solid-svg-icons";
 import { professionals } from "../../data/professionals";
+import CrisisModal from "../../components/common/CrisisModal";
 
 const onlyDigits = (value) => (value || "").replace(/[^\d]/g, "");
 
@@ -17,6 +20,7 @@ const CHAT_INTRO =
   "Hello, I found you through MindEase and would like to book a consultation.";
 
 function Professionals() {
+  const [showCrisisModal, setShowCrisisModal] = useState(false);
   // Shown only while developing, so a placeholder never reaches a demo unnoticed.
   const hasPlaceholders = professionals.some((p) => p.name.includes("REPLACE"));
 
@@ -30,6 +34,41 @@ function Professionals() {
             <p className="text-textSecondary">
               Talk to a psychiatrist by phone or chat. They can support you in ways MindEase can't.
             </p>
+          </div>
+        </div>
+
+        {/* 24x7 Emergency Helplines Quick Banner */}
+        <div className="mb-6 p-4 rounded-2xl border border-red-200 bg-red-50/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-red-600 text-white flex items-center justify-center font-bold shrink-0">
+              <FontAwesomeIcon icon={faPhone} />
+            </div>
+            <div>
+              <div className="text-sm font-bold text-red-950 flex items-center gap-2">
+                <span>In Crisis or Need Urgent Free Support?</span>
+                <span className="text-[10px] font-bold uppercase bg-red-200 text-red-800 px-2 py-0.5 rounded-full">
+                  24×7 Free
+                </span>
+              </div>
+              <p className="text-xs text-red-700">
+                Call TeleMANAS at <a href="tel:14416" className="font-extrabold underline">14416</a> / <a href="tel:18008914416" className="font-extrabold underline">1800-891-4416</a> or browse verified crisis helplines.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <a
+              href="tel:14416"
+              className="flex-1 sm:flex-none text-center text-xs font-bold bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl transition shadow-2xs"
+            >
+              Call 14416
+            </a>
+            <button
+              onClick={() => setShowCrisisModal(true)}
+              className="flex-1 sm:flex-none text-xs font-bold bg-white border border-red-300 hover:bg-red-100 text-red-800 px-4 py-2 rounded-xl transition cursor-pointer"
+            >
+              View All Helplines
+            </button>
           </div>
         </div>
 
@@ -124,6 +163,11 @@ function Professionals() {
           </p>
         </div>
       </div>
+
+      <CrisisModal
+        isOpen={showCrisisModal}
+        onClose={() => setShowCrisisModal(false)}
+      />
     </div>
   );
 }

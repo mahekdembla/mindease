@@ -329,6 +329,24 @@ export async function sendSosAlert(emails = [], automatic = false) {
     return data;
 }
 
+export async function getSafetyActivities() {
+    const response = await fetch(`${API_URL}/api/safety-activities`, {
+        headers: getAuthHeaders(),
+        credentials: "include",
+    });
+    if (!response.ok) return [];
+    return await response.json();
+}
+
+export async function getSafetyStatus() {
+    const response = await fetch(`${API_URL}/api/safety-status`, {
+        headers: getAuthHeaders(),
+        credentials: "include",
+    });
+    if (!response.ok) return { email_configured: false };
+    return await response.json();
+}
+
 export async function updateProfile(name, email) {
     const response = await fetch(`${API_URL}/auth/me`, {
         method: "PUT",

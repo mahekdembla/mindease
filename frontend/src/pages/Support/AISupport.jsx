@@ -16,6 +16,7 @@ import {
 } from "../../services/api";
 
 import AISidebar from "../../components/layout/AISidebar.jsx";
+import SafetyConsentModal from "../../components/common/SafetyConsentModal.jsx";
 
 // Renders **bold** spans in AI replies (everything else stays plain text; no HTML is injected)
 function formatReply(text) {
@@ -538,94 +539,17 @@ function AISupport() {
                 </div>
             </div>
 
-            {/* SOS Modal */}
-            {sosModalOpen && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-lg">
-                        {!sosSent ? (
-                            <>
-                                <h2 className="text-xl font-bold text-red-600 mb-2">Contact Safe Place</h2>
-                                <p className="text-sm text-textSecondary mb-4">
-                                    MindEase will send an urgent email letting your trusted contacts know you need support.
-                                </p>
-
-                                <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 text-sm mb-4">
-                                    <span className="font-semibold text-gray-700">Message Preview:</span>
-                                    <br />
-                                    "I'm not feeling okay right now. Please check on me."
-                                </div>
-
-                                <h3 className="font-semibold mb-2">Who should we contact?</h3>
-                                <div className="space-y-2 mb-6">
-                                    {contacts.map((c) => (
-                                        <label
-                                            key={c.id}
-                                            className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer"
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedContacts.includes(c.id)}
-                                                onChange={(e) => {
-                                                    if (e.target.checked) setSelectedContacts([...selectedContacts, c.id]);
-                                                    else setSelectedContacts(selectedContacts.filter((id) => id !== c.id));
-                                                }}
-                                                className="accent-red-600 w-4 h-4"
-                                            />
-                                            <span>
-                                                {c.name} {c.email && `(${c.email})`}
-                                            </span>
-                                        </label>
-                                    ))}
-                                </div>
-
-                                <div className="flex gap-3">
-                                    <button
-                                        onClick={() => setSosModalOpen(false)}
-                                        className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-xl font-medium hover:bg-gray-200 transition"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        onClick={handleSendSos}
-                                        disabled={selectedContacts.length === 0}
-                                        className="flex-1 bg-red-600 text-white py-2 rounded-xl font-medium hover:bg-red-700 transition disabled:opacity-50"
-                                    >
-                                        Send SOS
-                                    </button>
-                                </div>
-                            </>
-                        ) : (
-                            sosResult?.simulated ? (
-                                <div className="text-center py-8">
-                                    <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
-                                        !
-                                    </div>
-                                    <h2 className="text-xl font-bold mb-2">Email Not Sent</h2>
-                                    <p className="text-textSecondary mb-4">
-                                        {sosResult.message} Please call or message your trusted contact directly, or reach local emergency services.
-                                    </p>
-                                    <button
-                                        onClick={() => setSosModalOpen(false)}
-                                        className="bg-gray-100 text-gray-700 px-6 py-2 rounded-xl font-medium hover:bg-gray-200 transition"
-                                    >
-                                        Close
-                                    </button>
-                                </div>
-                            ) : (
-                                <div className="text-center py-8">
-                                    <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
-                                        ✓
-                                    </div>
-                                    <h2 className="text-xl font-bold mb-2">Message Sent</h2>
-                                    <p className="text-textSecondary">
-                                        Your trusted contacts have been notified. Please hold on, someone will reach out soon.
-                                    </p>
-                                </div>
-                            )
-                        )}
-                    </div>
-                </div>
-            )}
+            {/* Safety Consent & Verification Modal */}
+            <SafetyConsentModal
+                isOpen={sosModalOpen}
+                onClose={() => setSosModalOpen(false)}
+                contacts={contacts}
+                contextText={messages.slice(-3).map(m => m.text).join(" ")}
+                isSuicideContext={messages.some(m => m.isHighRisk || /suicid|kill|die|end it|hurt myself|harm/i.test(m.text))}
+                onSosSuccess={(res) => {
+                    setSosResult(res);
+                }}
+            />
         </div>
     );
 }
