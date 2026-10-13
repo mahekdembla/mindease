@@ -420,3 +420,28 @@ export async function streamChatMessage(message, conversationId = null, onDelta 
 
     throw fail("The reply was interrupted");
 }
+
+export async function fetchNearbyProfessionals({ lat, lon, limit = 8, query, city } = {}) {
+    const params = new URLSearchParams();
+    if (lat !== undefined && lat !== null) params.append("lat", lat);
+    if (lon !== undefined && lon !== null) params.append("lon", lon);
+    if (limit) params.append("limit", limit);
+    if (query) params.append("query", query);
+    if (city) params.append("city", city);
+
+    const queryString = params.toString();
+    const url = `${API_URL}/api/professionals/nearby${queryString ? `?${queryString}` : ""}`;
+
+    const response = await fetch(url, {
+        method: "GET",
+        headers: getAuthHeaders(),
+        credentials: "include",
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to fetch nearby professionals (${response.status})`);
+    }
+
+    const data = await response.json();
+    return data;
+}

@@ -76,6 +76,9 @@ app.add_middleware(
 from routers.content_router import router as content_router
 app.include_router(content_router)
 
+from routers.professionals_router import router as professionals_router
+app.include_router(professionals_router)
+
 
 
 
