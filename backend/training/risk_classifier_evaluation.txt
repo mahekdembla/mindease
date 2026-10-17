@@ -1,0 +1,42 @@
+=================================================================
+MINDEASE RISK CLASSIFIER EVALUATION
+=================================================================
+Prediction CSV: risk_heldout_predictions.csv
+Number of evaluated rows: 4982
+
+OVERALL METRICS
+Accuracy:          0.8442 (84.42%)
+Macro precision:   0.8288
+Macro recall:      0.8441
+Macro F1-score:    0.8350
+Weighted precision:0.8478
+Weighted recall:   0.8442
+Weighted F1-score: 0.8448
+
+BOOTSTRAP 95% CONFIDENCE INTERVALS
+Accuracy:   [0.8344, 0.8543]
+Macro F1:   [0.8244, 0.8454]
+
+PER-CLASS CLASSIFICATION REPORT
+              precision    recall  f1-score   support
+
+     Anxiety     0.8202    0.8954    0.8561       545
+  Depression     0.8024    0.7338    0.7666      1439
+      Normal     0.9618    0.9324    0.9469      1865
+    Suicidal     0.7308    0.8147    0.7705      1133
+
+    accuracy                         0.8442      4982
+   macro avg     0.8288    0.8441    0.8350      4982
+weighted avg     0.8478    0.8442    0.8448      4982
+
+CONFUSION MATRIX
+Label order: ['Anxiety', 'Depression', 'Normal', 'Suicidal']
+[[ 488   40   11    6]
+ [  53 1056   30  300]
+ [  46   46 1739   34]
+ [   8  174   28  923]]
+
+TRUE-LABEL COUNTS
+{'Normal': 1865, 'Depression': 1439, 'Suicidal': 1133, 'Anxiety': 545}
+
+LIMITATION: These metrics evaluate the saved predictions in the CSV. They do not independently verify the model, dataset quality, or held-out status of the data.

@@ -189,9 +189,11 @@ class LoginRequest(BaseModel):
 class ContactRequest(BaseModel):
     name: str
     phone: str = ""
-    email: str
+    email: str = ""
     relationship: str = ""
     receive_sos: bool = True
+    # SMS is opt-in and defaults to disabled for both new and legacy contacts.
+    receive_sms: bool = False
 
 class UpdateContactRequest(BaseModel):
     name: Optional[str] = None
@@ -199,6 +201,7 @@ class UpdateContactRequest(BaseModel):
     email: Optional[str] = None
     relationship: Optional[str] = None
     receive_sos: Optional[bool] = None
+    receive_sms: Optional[bool] = None
 
 
 # AUTHENTICATION ENDPOINTS
@@ -1759,6 +1762,7 @@ def add_contact(req: ContactRequest, current_user: dict = Depends(get_current_us
         "email": req.email,
         "relationship": req.relationship,
         "receive_sos": req.receive_sos,
+        "receive_sms": req.receive_sms,
         "created_at": datetime.now()
     }
     res = contacts_col.insert_one(doc)
@@ -1786,6 +1790,7 @@ def update_contact(contact_id: str, req: UpdateContactRequest, current_user: dic
     if req.email is not None: update_fields["email"] = req.email
     if req.relationship is not None: update_fields["relationship"] = req.relationship
     if req.receive_sos is not None: update_fields["receive_sos"] = req.receive_sos
+    if req.receive_sms is not None: update_fields["receive_sms"] = req.receive_sms
 
     if update_fields:
         res = contacts_col.find_one_and_update(query, {"$set": update_fields}, return_document=True)
@@ -1843,9 +1848,154 @@ def get_safety_activities(current_user: dict = Depends(get_current_user)):
 def get_safety_status(current_user: dict = Depends(get_current_user)):
     sender_email = (os.environ.get("SENDER_EMAIL") or "").strip()
     sender_pass = (os.environ.get("SENDER_PASSWORD") or "").strip()
+    sms_mode = (os.environ.get("MINDEASE_SMS_MODE") or "demo").strip().lower()
+    sms_configured = bool(
+        (os.environ.get("MSG91_AUTH_KEY") or "").strip()
+        and (os.environ.get("MSG91_TEMPLATE_ID") or "").strip()
+    )
     return {
         "email_configured": bool(sender_email and sender_pass),
-        "sender_email": sender_email if sender_email else None
+        "sender_email": sender_email if sender_email else None,
+        "sms_mode": sms_mode if sms_mode in {"demo", "msg91"} else "demo",
+        "sms_configured": sms_configured and sms_mode == "msg91",
+    }
+
+
+class SmsSosRequest(BaseModel):
+    # Optional list narrows the send to selected contact IDs. It never accepts phone numbers.
+    contact_ids: List[str] = Field(default_factory=list)
+
+
+def _normalize_sms_number(value: str) -> Optional[str]:
+    """Normalize a phone number to digits with an international country code."""
+    raw = (value or "").strip()
+    if not raw:
+        return None
+    digits = re.sub(r"\D", "", raw)
+    if raw.startswith("+"):
+        normalized = digits
+    elif len(digits) == 10:
+        # MindEase currently targets India by default for 10-digit local numbers.
+        normalized = "91" + digits
+    elif len(digits) == 12 and digits.startswith("91"):
+        normalized = digits
+    else:
+        return None
+    if not (8 <= len(normalized) <= 15) or normalized.startswith("0"):
+        return None
+    return normalized
+
+
+@app.post("/api/sos/sms")
+def send_sms_sos(req: SmsSosRequest, current_user: dict = Depends(get_current_user)):
+    """Send or simulate an SMS alert to this user's explicitly SMS-enabled contacts."""
+    user_id = str(current_user["_id"])
+    contacts_col = db_manager.trusted_contacts
+    activities_col = db_manager.safety_activities
+    if not db_manager.is_connected() or contacts_col is None:
+        raise HTTPException(status_code=503, detail="Database service unavailable.")
+
+    query = {"user_id": user_id, "receive_sms": True}
+    if req.contact_ids:
+        object_ids = [ObjectId(cid) for cid in req.contact_ids if ObjectId.is_valid(cid)]
+        # IDs are always intersected with the authenticated user's own opted-in contacts.
+        query["_id"] = {"$in": object_ids}
+    eligible = list(contacts_col.find(query))
+    if req.contact_ids and not eligible:
+        raise HTTPException(status_code=400, detail="No selected contacts are eligible for SMS alerts. Check phone numbers and SMS consent.")
+    if not eligible:
+        raise HTTPException(status_code=400, detail="No trusted contacts have SMS alerts enabled. Add a phone number and explicitly enable SMS consent in Safe Place.")
+
+    recipients = []
+    invalid_count = 0
+    for contact in eligible:
+        number = _normalize_sms_number(contact.get("phone", ""))
+        if number:
+            recipients.append({"number": number, "contact_id": str(contact.get("_id")), "name": contact.get("name", "Trusted contact")})
+        else:
+            invalid_count += 1
+    if not recipients:
+        raise HTTPException(status_code=400, detail="No eligible contacts have a valid phone number. Use an international number such as +91XXXXXXXXXX.")
+
+    # Avoid accidental repeat alerts: one SMS SOS batch per user per 60 seconds.
+    if activities_col is not None:
+        recent = activities_col.find_one({
+            "user_id": user_id,
+            "type": "sos_sms",
+            "timestamp": {"$gte": datetime.now() - timedelta(seconds=60)},
+        })
+        if recent:
+            raise HTTPException(status_code=429, detail="An SMS alert was requested recently. Please wait 60 seconds before trying again.")
+
+    mode = (os.environ.get("MINDEASE_SMS_MODE") or "demo").strip().lower()
+    auth_key = (os.environ.get("MSG91_AUTH_KEY") or "").strip()
+    template_id = (os.environ.get("MSG91_TEMPLATE_ID") or "").strip()
+    if mode not in {"demo", "msg91"}:
+        mode = "demo"
+
+    # A safe default: no provider request is made unless MSG91 mode and both credentials are set.
+    if mode == "msg91":
+        if not auth_key or not template_id:
+            raise HTTPException(status_code=503, detail="MSG91 is selected but MSG91_AUTH_KEY or MSG91_TEMPLATE_ID is missing. No SMS was sent.")
+        payload = {
+            "template_id": template_id,
+            "recipients": [{"mobiles": recipient["number"]} for recipient in recipients],
+            "realTimeResponse": "1",
+        }
+        try:
+            response = requests.post(
+                "https://control.msg91.com/api/v5/flow",
+                headers={"accept": "application/json", "authkey": auth_key, "content-type": "application/json"},
+                json=payload,
+                timeout=15,
+            )
+            try:
+                provider_data = response.json()
+            except ValueError:
+                provider_data = {"message": response.text[:300]}
+            if not isinstance(provider_data, dict) or not response.ok or str(provider_data.get("type", "success")).lower() == "error":
+                # Do not expose provider response details or credentials to the client.
+                print(f"MSG91 SMS request failed with HTTP {response.status_code}.")
+                raise HTTPException(status_code=502, detail="The SMS provider rejected the request. Check MSG91 credentials, template approval and DLT configuration.")
+        except HTTPException:
+            raise
+        except requests.RequestException as exc:
+            print(f"MSG91 SMS request failed: {type(exc).__name__}")
+            raise HTTPException(status_code=502, detail="Could not reach the SMS provider. No successful submission was confirmed.")
+        result_status = "submitted"
+        simulated = False
+        # Provider acceptance means submitted, not necessarily delivered.
+        title = "SMS SOS Submitted"
+        description = f"SMS SOS request accepted by provider for {len(recipients)} trusted contact(s). Delivery is not confirmed."
+    else:
+        result_status = "simulated"
+        simulated = True
+        title = "SMS SOS Simulated"
+        description = f"Demo only: SMS was NOT sent. Simulation recorded for {len(recipients)} trusted contact(s)."
+        print(f"[SMS DEMO] User {user_id}: simulated SMS alert for {len(recipients)} opted-in contact(s); no message sent.")
+
+    if activities_col is not None:
+        try:
+            activities_col.insert_one({
+                "user_id": user_id,
+                "type": "sos_sms",
+                "recipient_count": len(recipients),
+                "timestamp": datetime.now(),
+                "title": title,
+                "description": description,
+                "simulated": simulated,
+                "invalid_contact_count": invalid_count,
+            })
+        except Exception as exc:
+            print(f"Could not record SMS safety activity: {type(exc).__name__}")
+
+    return {
+        "status": result_status,
+        "simulated": simulated,
+        "submitted": len(recipients) if not simulated else 0,
+        "considered": len(eligible),
+        "invalid_contacts": invalid_count,
+        "message": "SMS simulated — no message was sent." if simulated else "The SMS provider accepted the request. Delivery is not confirmed.",
     }
 
 

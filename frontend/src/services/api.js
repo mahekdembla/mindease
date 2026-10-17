@@ -329,6 +329,27 @@ export async function sendSosAlert(emails = [], automatic = false) {
     return data;
 }
 
+// Sends an SMS SOS request to the logged-in user's explicitly SMS-enabled contacts.
+// The backend resolves contact IDs against the authenticated user's database records.
+export async function sendSmsSosAlert(contactIds = []) {
+    const response = await fetch(`${API_URL}/api/sos/sms`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        credentials: "include",
+        body: JSON.stringify({ contact_ids: contactIds }),
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+        throw new Error(
+            response.status === 401
+                ? "Please log in to send SOS alerts."
+                : data.detail || "Failed to request SMS SOS alert"
+        );
+    }
+    return data;
+}
+
 export async function getSafetyActivities() {
     const response = await fetch(`${API_URL}/api/safety-activities`, {
         headers: getAuthHeaders(),
@@ -343,7 +364,7 @@ export async function getSafetyStatus() {
         headers: getAuthHeaders(),
         credentials: "include",
     });
-    if (!response.ok) return { email_configured: false };
+    if (!response.ok) return { email_configured: false, sms_configured: false, sms_mode: "demo" };
     return await response.json();
 }
 

@@ -13,7 +13,7 @@ import {
   faCircleCheck,
   faSpinner
 } from "@fortawesome/free-solid-svg-icons";
-import { API_URL, sendSosAlert, getSafetyActivities, getSafetyStatus } from "../../services/api";
+import { API_URL, sendSosAlert, sendSmsSosAlert, getSafetyActivities, getSafetyStatus } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import SafetyConsentModal from "../../components/common/SafetyConsentModal.jsx";
 
@@ -26,6 +26,8 @@ function SafePlace() {
   
   const [newContactName, setNewContactName] = useState("");
   const [newContactEmail, setNewContactEmail] = useState("");
+  const [newContactPhone, setNewContactPhone] = useState("");
+  const [newContactReceiveSms, setNewContactReceiveSms] = useState(false);
 
   // Selection state for sending SOS alerts to chosen contacts
   const [selectedEmails, setSelectedEmails] = useState(new Set());
@@ -34,6 +36,10 @@ function SafePlace() {
   const [sendingSos, setSendingSos] = useState(false);
   const [alertFeedback, setAlertFeedback] = useState(null); // { type: 'success' | 'warning' | 'error', message: '' }
   const [emailConfigured, setEmailConfigured] = useState(true);
+  const [smsConfigured, setSmsConfigured] = useState(false);
+  const [smsMode, setSmsMode] = useState("demo");
+  const [sendingSms, setSendingSms] = useState(false);
+  const [smsFeedback, setSmsFeedback] = useState(null);
 
   // Load contacts and activities on mount
   useEffect(() => {
@@ -46,6 +52,8 @@ function SafePlace() {
     try {
       const status = await getSafetyStatus();
       setEmailConfigured(status.email_configured);
+      setSmsConfigured(status.sms_configured === true);
+      setSmsMode(status.sms_mode || "demo");
     } catch {
       setEmailConfigured(false);
     }
@@ -100,9 +108,23 @@ function SafePlace() {
     );
   };
 
+  
   const handleAddContact = async () => {
-    if (!newContactName.trim() || !newContactEmail.trim()) return;
-    
+    const name = newContactName.trim();
+    const email = newContactEmail.trim();
+    const phone = newContactPhone.trim();
+
+    if (!name || (!email && !phone)) return;
+
+    const contactData = {
+      name,
+      email,
+      phone,
+      relationship: "",
+      receive_sos: Boolean(email),
+      receive_sms: Boolean(phone && newContactReceiveSms)
+    };
+
     try {
       const res = await fetch(`${API_URL}/api/contacts`, {
         method: "POST",
@@ -111,41 +133,43 @@ function SafePlace() {
           "Authorization": `Bearer ${localStorage.getItem("mindease_token") || ""}`
         },
         credentials: "include",
-        body: JSON.stringify({
-          name: newContactName.trim(),
-          email: newContactEmail.trim(),
-          receive_sos: true
-        })
+        body: JSON.stringify(contactData)
       });
+
       if (res.ok) {
         const created = await res.json();
         const updated = [...contacts, created];
+
         setContacts(updated);
         localStorage.setItem("trustedContacts", JSON.stringify(updated));
-        
-        // Also add new contact's email to selected list
-        setSelectedEmails(prev => new Set([...prev, created.email.trim().toLowerCase()]));
+
+        if (created.email) {
+          setSelectedEmails(prev =>
+            new Set([...prev, created.email.trim().toLowerCase()])
+          );
+        }
 
         setNewContactName("");
         setNewContactEmail("");
+        setNewContactPhone("");
+        setNewContactReceiveSms(false);
         return;
       }
+
+      const errorText = await res.text();
+      console.error("Could not save trusted contact:", res.status, errorText);
+      setAlertFeedback({
+        type: "error",
+        message: "Could not save contact to the server. Please check your login and backend connection."
+      });
+      return;
     } catch (e) {
       console.error("Failed to save contact to API:", e);
+      setAlertFeedback({
+        type: "error",
+        message: "Could not connect to the server. Your contact was not saved."
+      });
     }
-
-    const newContact = {
-      id: Date.now().toString(),
-      name: newContactName.trim(),
-      email: newContactEmail.trim(),
-      receive_sos: true
-    };
-    const updated = [...contacts, newContact];
-    setContacts(updated);
-    localStorage.setItem("trustedContacts", JSON.stringify(updated));
-    setSelectedEmails(prev => new Set([...prev, newContact.email.trim().toLowerCase()]));
-    setNewContactName("");
-    setNewContactEmail("");
   };
 
   const handleDeleteContact = async (id) => {
@@ -212,6 +236,115 @@ function SafePlace() {
       });
     } catch (e) {
       console.error("Failed to update contact in backend:", e);
+    }
+  };
+
+ 
+const toggleReceiveSms = async (id) => {
+  const target = contacts.find((contact) => contact.id === id);
+  if (!target) return;
+
+  if (!target.phone?.trim()) {
+    setSmsFeedback({
+      type: "warning",
+      message: "Add a phone number before enabling SMS alerts."
+    });
+    return;
+  }
+
+  const previousValue = target.receive_sms === true;
+  const nextValue = !previousValue;
+
+  setSmsFeedback(null);
+
+  // Update the UI immediately.
+  setContacts((current) =>
+    current.map((contact) =>
+      contact.id === id
+        ? { ...contact, receive_sms: nextValue }
+        : contact
+    )
+  );
+
+  try {
+    const response = await fetch(`${API_URL}/api/contacts/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${localStorage.getItem("mindease_token") || ""}`
+      },
+      credentials: "include",
+      body: JSON.stringify({ receive_sms: nextValue })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Server returned HTTP ${response.status}`);
+    }
+
+    const saved = await response.json();
+
+    setContacts((current) =>
+      current.map((contact) =>
+        contact.id === id
+          ? { ...contact, ...saved }
+          : contact
+      )
+    );
+
+    setContacts((current) => {
+      localStorage.setItem("trustedContacts", JSON.stringify(current));
+      return current;
+    });
+  } catch (error) {
+    // Roll back only the contact whose update failed.
+    setContacts((current) => {
+      const rolledBack = current.map((contact) =>
+        contact.id === id
+          ? { ...contact, receive_sms: previousValue }
+          : contact
+      );
+
+      localStorage.setItem("trustedContacts", JSON.stringify(rolledBack));
+      return rolledBack;
+    });
+
+    setSmsFeedback({
+      type: "error",
+      message: error.message || "Could not update SMS consent. Please try again."
+    });
+  }
+};
+
+  const handleSendSmsSos = async () => {
+    const eligible = contacts.filter((contact) => contact.receive_sms === true && contact.phone?.trim() && contact.id);
+    if (!eligible.length) {
+      setSmsFeedback({ type: "warning", message: "Add a phone number and explicitly enable SMS alerts for at least one trusted contact." });
+      return;
+    }
+    if (smsMode === "msg91" && !smsConfigured) {
+      setSmsFeedback({ type: "error", message: "MSG91 mode is selected, but the backend is missing its authentication key or template ID. No SMS was sent." });
+      return;
+    }
+    const isDemo = smsMode !== "msg91";
+    const prompt = isDemo
+      ? `Run a DEMO for ${eligible.length} SMS-enabled contact(s)? No real SMS will be sent.`
+      : `Send an SMS SOS request to ${eligible.length} SMS-enabled trusted contact(s)? The message will ask them to contact you. This action cannot be undone.`;
+    if (!window.confirm(prompt)) return;
+
+    setSendingSms(true);
+    setSmsFeedback(null);
+    try {
+      const result = await sendSmsSosAlert(eligible.map((contact) => contact.id));
+      if (result.simulated) {
+        setSmsFeedback({ type: "warning", message: "SMS simulated — no message was sent. Configure MSG91 to enable real SMS." });
+      } else {
+        setSmsFeedback({ type: "success", message: `The SMS provider accepted the request for ${result.submitted} contact(s). Delivery is not confirmed.` });
+      }
+      await loadActivities();
+    } catch (error) {
+      setSmsFeedback({ type: "error", message: error.message || "Could not request SMS alert." });
+    } finally {
+      setSendingSms(false);
     }
   };
 
@@ -350,8 +483,35 @@ function SafePlace() {
                 <FontAwesomeIcon icon={faPaperPlane} />
                 Contact Safe Person / SOS
               </button>
+              <button
+                type="button"
+                onClick={handleSendSmsSos}
+                disabled={sendingSms || !contacts.some((contact) => contact.receive_sms === true && contact.phone?.trim() && contact.id)}
+                className="bg-purple-600 hover:bg-purple-700 active:scale-95 disabled:opacity-50 text-white font-semibold px-6 py-2.5 rounded-xl flex items-center justify-center gap-2.5 shadow-sm transition-all cursor-pointer text-sm"
+              >
+                <FontAwesomeIcon icon={sendingSms ? faSpinner : faPaperPlane} spin={sendingSms} />
+                {sendingSms ? "Processing SMS alert..." : "Send SMS Safe Space Alert"}
+              </button>
+              <p className="text-[11px] text-textSecondary max-w-sm">
+                {smsMode === "msg91" && smsConfigured
+                  ? "MSG91 is configured. Provider acceptance does not guarantee delivery."
+                  : "Demo mode is active: no SMS will be sent until MSG91 is configured."}
+              </p>
             </div>
           </div>
+
+          {smsFeedback && (
+            <div className={`mt-4 p-3.5 rounded-xl border flex items-center gap-3 text-sm ${
+              smsFeedback.type === "success"
+                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400"
+                : smsFeedback.type === "warning"
+                ? "bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400"
+                : "bg-red-500/10 border-red-500/30 text-red-700 dark:text-red-400"
+            }`}>
+              <FontAwesomeIcon icon={smsFeedback.type === "success" ? faCircleCheck : faCircleExclamation} />
+              <span>{smsFeedback.message}</span>
+            </div>
+          )}
 
           {/* Alert Feedback Banner */}
           {alertFeedback && (
@@ -376,7 +536,7 @@ function SafePlace() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-xl font-semibold text-textPrimary">Trusted Contacts</h2>
-                <p className="text-xs text-textSecondary mt-0.5">Select who should receive the SOS email</p>
+                <p className="text-xs text-textSecondary mt-0.5">Manage email alerts and explicit SMS consent for each trusted contact</p>
               </div>
               {validSosContacts.length > 0 && (
                 <button
@@ -418,22 +578,35 @@ function SafePlace() {
                               {contact.email}
                             </p>
                           ) : (
-                            <p className="text-xs text-amber-500">No email provided</p>
+                            <p className="text-xs text-textSecondary">No email provided</p>
                           )}
+                          {contact.phone && <p className="text-xs text-textSecondary mt-1">Phone: {contact.phone}</p>}
                         </div>
                       </div>
 
                       {/* Right actions: Receive SOS toggle & delete */}
                       <div className="flex items-center gap-3">
-                        <label className="flex items-center gap-1.5 text-xs text-textSecondary cursor-pointer">
-                          <input 
-                            type="checkbox" 
-                            checked={contact.receive_sos !== false}
-                            onChange={() => toggleReceiveSos(contact.id)}
-                            className="accent-primary"
-                          />
-                          SOS enabled
-                        </label>
+                        <div className="flex flex-col gap-2 items-start">
+                          <label className="flex items-center gap-1.5 text-xs text-textSecondary cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={contact.receive_sos !== false}
+                              onChange={() => toggleReceiveSos(contact.id)}
+                              className="accent-primary"
+                            />
+                            Email SOS
+                          </label>
+                          <label className="flex items-center gap-1.5 text-xs text-textSecondary cursor-pointer" title="Enable only if this person has agreed to receive SMS alerts">
+                            <input
+                              type="checkbox"
+                              checked={contact.receive_sms === true}
+                              onChange={() => toggleReceiveSms(contact.id)}
+                              disabled={!contact.phone?.trim()}
+                              className="accent-primary"
+                            />
+                            SMS consent
+                          </label>
+                        </div>
                         
                         <button 
                           onClick={() => handleDeleteContact(contact.id)} 
@@ -467,16 +640,34 @@ function SafePlace() {
                   onChange={(e) => setNewContactName(e.target.value)}
                   className="w-full p-3 rounded-xl border border-border bg-background outline-none focus:border-primary text-sm"
                 />
-                <input 
-                  type="email" 
-                  placeholder="Email Address (e.g. friend@example.com)" 
+                <input
+                  type="email"
+                  placeholder="Email Address (optional)"
                   value={newContactEmail}
                   onChange={(e) => setNewContactEmail(e.target.value)}
                   className="w-full p-3 rounded-xl border border-border bg-background outline-none focus:border-primary text-sm"
                 />
-                <button 
+                <input
+                  type="tel"
+                  placeholder="Phone number with country code (e.g. +91XXXXXXXXXX)"
+                  value={newContactPhone}
+                  onChange={(e) => setNewContactPhone(e.target.value)}
+                  autoComplete="tel"
+                  className="w-full p-3 rounded-xl border border-border bg-background outline-none focus:border-primary text-sm"
+                />
+                <label className="flex items-start gap-2 text-xs text-textSecondary leading-relaxed">
+                  <input
+                    type="checkbox"
+                    checked={newContactReceiveSms}
+                    onChange={(e) => setNewContactReceiveSms(e.target.checked)}
+                    disabled={!newContactPhone.trim()}
+                    className="accent-primary mt-0.5"
+                  />
+                  <span>This trusted person has agreed to receive SMS safety alerts. Keep this unchecked unless they have consented.</span>
+                </label>
+                <button
                   onClick={handleAddContact}
-                  disabled={!newContactName.trim() || !newContactEmail.trim()}
+                  disabled={!newContactName.trim() || (!newContactEmail.trim() && !newContactPhone.trim()) || (newContactReceiveSms && !newContactPhone.trim())}
                   className="bg-primary hover:bg-primary/90 text-white p-3 rounded-xl flex items-center justify-center gap-2 disabled:opacity-50 mt-1 cursor-pointer font-medium text-sm transition shadow-sm"
                 >
                   <FontAwesomeIcon icon={faPlus} />
