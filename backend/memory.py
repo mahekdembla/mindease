@@ -45,7 +45,7 @@ Newest exchanges ({when}), oldest first:
 Return ONLY a JSON object with these keys:
 "summary": 2-4 sentences in third person ("They..."): what this conversation is about, what happened, how they felt and anything still unresolved. Keep the important points from the previous note.
 "key_facts": up to 8 short, durable facts worth remembering later (people with names/relationships, events and when they happen, goals, worries, preferences, what helped). Merge with the previous facts and drop trivia.
-"themes": 1-4 short lowercase topic labels, e.g. "exam stress", "family conflict", "sleep", "loneliness", "work", "self-esteem", "friendship", "health".
+"themes": 1-4 short lowercase topic labels, e.g. "academic deadlines", "project stress", "overthinking", "burnout", "exam stress", "family conflict", "sleep", "loneliness", "work", "self-esteem", "friendship", "health".
 "mood": one of "positive", "calm", "mixed", "anxious", "sad", "angry", "distressed".
 "recap": one short, warm sentence addressed to the user ("You talked about ...") for their Insights page.
 Only use what was actually said; never invent details."""

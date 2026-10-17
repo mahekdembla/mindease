@@ -5,7 +5,9 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faPaperPlane,
   faMicrophone,
+  faStop,
 } from "@fortawesome/free-solid-svg-icons";
+import { romanizeSpokenText } from "../../utils/transliterate";
 
 import {
   sendChatMessage,
@@ -48,6 +50,23 @@ function AISupport() {
 
   const navigate = useNavigate();
   const chatRef = useRef(null);
+
+  const [isListening, setIsListening] = useState(false);
+  const [voiceLang, setVoiceLang] = useState(() => localStorage.getItem("voice_lang") || "hi-IN");
+  const recognitionRef = useRef(null);
+  const isListeningRef = useRef(false);
+  const transcriptBaseRef = useRef("");
+  const voiceLangRef = useRef(voiceLang);
+
+  useEffect(() => {
+    return () => {
+      isListeningRef.current = false;
+      if (recognitionRef.current) {
+        try { recognitionRef.current.abort(); } catch (_) {}
+        recognitionRef.current = null;
+      }
+    };
+  }, []);
 
   const loadMessagesForConversation = async (convId) => {
     try {
@@ -206,6 +225,9 @@ function AISupport() {
   }, [messages, isLoading]);
 
   const handleSend = async (messageText = input) => {
+    if (isListeningRef.current) {
+      stopListening();
+    }
     if (!messageText.trim() || isLoading) return;
 
     const userText = messageText.trim();
@@ -319,29 +341,134 @@ function AISupport() {
     }
   };
 
+  const stopListening = () => {
+    isListeningRef.current = false;
+    setIsListening(false);
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch (err) {
+        console.warn("Recognition stop error:", err);
+      }
+      recognitionRef.current = null;
+    }
+  };
+
+  const handleVoiceLangToggle = () => {
+    const nextLang = voiceLang === "hi-IN" ? "en-US" : "hi-IN";
+    setVoiceLang(nextLang);
+    voiceLangRef.current = nextLang;
+    localStorage.setItem("voice_lang", nextLang);
+    if (isListeningRef.current) {
+      stopListening();
+      setTimeout(() => startListening(), 120);
+    }
+  };
+
   const startListening = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      alert("Your browser does not support voice input");
+      alert("Voice input is not supported in this browser. Please use Google Chrome, Microsoft Edge, or a browser that supports the Web Speech API.");
       return;
     }
 
-    const recognition = new SpeechRecognition();
-    recognition.lang = "en-US";
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
+    // Toggle: clicking active mic stops listening
+    if (isListeningRef.current) {
+      stopListening();
+      return;
+    }
 
-    recognition.start();
-    recognition.onresult = event => {
-      const speechText = event.results[0][0].transcript;
-      setInput(speechText);
-      handleSend(speechText);
-    };
-    recognition.onerror = event => {
-      console.error("Voice error:", event.error);
-      alert("Mic error: " + event.error);
-    };
+    try {
+      if (recognitionRef.current) {
+        try { recognitionRef.current.abort(); } catch (_) {}
+        recognitionRef.current = null;
+      }
+
+      const recognition = new SpeechRecognition();
+      recognition.lang = voiceLangRef.current || "hi-IN";
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.maxAlternatives = 1;
+
+      // Retain existing text in the input box so speech appends smoothly
+      transcriptBaseRef.current = input.trim();
+      let sessionFinalText = "";
+
+      recognition.onstart = () => {
+        setIsListening(true);
+        isListeningRef.current = true;
+      };
+
+      recognition.onresult = (event) => {
+        let finalStr = "";
+        let interimStr = "";
+
+        for (let i = 0; i < event.results.length; i++) {
+          const result = event.results[i];
+          const transcriptPiece = result[0]?.transcript || "";
+          if (result.isFinal) {
+            finalStr += transcriptPiece + " ";
+          } else {
+            interimStr += transcriptPiece;
+          }
+        }
+
+        sessionFinalText = finalStr;
+        const currentSpokenRaw = (sessionFinalText + interimStr).trim();
+
+        // Detect spoken language: if Hindi (Devanagari), transliterate to natural Romanized Hinglish.
+        // If English or other languages, preserve in original language.
+        const processedSpoken = romanizeSpokenText(currentSpokenRaw);
+
+        const base = transcriptBaseRef.current;
+        const fullTranscript = base ? `${base} ${processedSpoken}` : processedSpoken;
+
+        // CRITICAL: Transcribe ONLY into the text box. NEVER send automatically!
+        setInput(fullTranscript);
+      };
+
+      recognition.onerror = (event) => {
+        console.warn("Speech recognition error:", event.error);
+        if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+          alert("Microphone permission was denied. Please allow microphone access in your browser settings to use voice input.");
+          stopListening();
+        } else if (event.error === "audio-capture") {
+          alert("No microphone was detected on your device. Please ensure a microphone is connected.");
+          stopListening();
+        } else if (event.error === "network") {
+          console.warn("Speech recognition network error.");
+          stopListening();
+        }
+        // "no-speech" or "aborted" are normal pause/stop events and do not need alerts
+      };
+
+      recognition.onend = () => {
+        // If the user hasn't explicitly stopped, continue listening
+        if (isListeningRef.current) {
+          try {
+            transcriptBaseRef.current = input.trim();
+            recognition.start();
+          } catch (e) {
+            setIsListening(false);
+            isListeningRef.current = false;
+            recognitionRef.current = null;
+          }
+        } else {
+          setIsListening(false);
+          isListeningRef.current = false;
+          recognitionRef.current = null;
+        }
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    } catch (err) {
+      console.error("Failed to start speech recognition:", err);
+      setIsListening(false);
+      isListeningRef.current = false;
+      recognitionRef.current = null;
+    }
   };
 
   const getEmotionColor = () => {
@@ -448,6 +575,31 @@ function AISupport() {
             );
           })}
 
+          {messages.length <= 1 && (
+            <div className="mt-auto pt-3 flex flex-wrap gap-2">
+              <span className="text-xs text-textSecondary w-full mb-0.5">Quick thoughts you can tap:</span>
+              {[
+                "I'm panicking over a project deadline",
+                "My brain won't stop overthinking",
+                "Feeling anxious and overwhelmed",
+                "Stuck in a freeze state and procrastinating",
+                "I feel like an imposter and falling behind"
+              ].map((chip, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => {
+                    setInput(chip);
+                    handleSend(chip);
+                  }}
+                  className="text-xs bg-primaryLight/70 hover:bg-primaryLight text-primary font-medium px-3 py-1.5 rounded-full border border-primary/20 transition-all text-left shadow-2xs hover:shadow-xs"
+                >
+                  {chip}
+                </button>
+              ))}
+            </div>
+          )}
+
           {isLoading && !isStreaming && (
             <div className="max-w-md p-3.5 rounded-2xl rounded-bl-xs text-xs bg-primaryLight text-textPrimary self-start animate-pulse">
               Thinking... 💭
@@ -455,37 +607,78 @@ function AISupport() {
           )}
         </div>
 
-        <div className="mt-4 flex gap-3">
-          <input
-            type="text"
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            placeholder="Type your message..."
-            className="flex-1 p-3.5 rounded-2xl border border-border bg-white text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary shadow-xs transition-all"
-            onKeyDown={e => {
-              if (e.key === "Enter" && !e.shiftKey) handleSend();
-            }}
-            disabled={isLoading}
-          />
+        <div className="mt-4 flex flex-col gap-2">
+          {isListening && (
+            <div className="flex items-center justify-between px-3.5 py-2 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600 animate-pulse shadow-2xs">
+              <span className="flex items-center gap-2 font-medium">
+                <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
+                Listening continuously... Speech will appear in the box below. Click Stop when finished.
+              </span>
+              <button
+                type="button"
+                onClick={stopListening}
+                className="font-bold underline hover:text-red-800 ml-2 py-0.5 px-1.5 rounded cursor-pointer"
+              >
+                Stop
+              </button>
+            </div>
+          )}
 
-          <button
-            type="button"
-            onClick={startListening}
-            disabled={isLoading}
-            title="Voice Input"
-            className="px-4 rounded-2xl border border-border bg-white text-gray-600 hover:text-primary hover:bg-primaryLight/50 transition-all disabled:opacity-50"
-          >
-            <FontAwesomeIcon icon={faMicrophone} />
-          </button>
+          <div className="flex gap-2.5 items-center">
+            <input
+              type="text"
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              placeholder={isListening ? "Listening... Speak now (speech transcribes here)..." : "Type your message..."}
+              className={`flex-1 p-3.5 rounded-2xl border ${
+                isListening ? "border-red-400 ring-1 ring-red-400" : "border-border"
+              } bg-white text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary shadow-xs transition-all`}
+              onKeyDown={e => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  if (isListening) stopListening();
+                  handleSend();
+                }
+              }}
+              disabled={isLoading}
+            />
 
-          <button
-            type="button"
-            onClick={() => handleSend()}
-            disabled={isLoading || !input.trim()}
-            className="bg-primary hover:bg-primaryDark text-white px-5 rounded-2xl font-medium transition-all disabled:opacity-50 shadow-sm hover:shadow"
-          >
-            <FontAwesomeIcon icon={faPaperPlane} />
-          </button>
+            <button
+              type="button"
+              onClick={handleVoiceLangToggle}
+              disabled={isLoading}
+              title={`Voice Language Mode: ${voiceLang === "hi-IN" ? "Hinglish / Hindi (Romanized)" : "English"}. Click to toggle.`}
+              className="px-3 py-3.5 rounded-2xl border border-border bg-white text-xs font-semibold text-textSecondary hover:text-primary hover:border-primary/40 transition-all shadow-2xs shrink-0 flex items-center gap-1 cursor-pointer"
+            >
+              <span>{voiceLang === "hi-IN" ? "🇮🇳 Hinglish" : "🌐 English"}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={startListening}
+              disabled={isLoading}
+              title={isListening ? "Stop Voice Input" : "Start Voice Input"}
+              className={`px-4 py-3.5 rounded-2xl border transition-all shrink-0 cursor-pointer ${
+                isListening
+                  ? "bg-red-500 border-red-500 text-white animate-pulse shadow-md"
+                  : "border-border bg-white text-gray-600 hover:text-primary hover:bg-primaryLight/50 shadow-2xs"
+              }`}
+            >
+              <FontAwesomeIcon icon={isListening ? faStop : faMicrophone} />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (isListening) stopListening();
+                handleSend();
+              }}
+              disabled={isLoading || !input.trim()}
+              className="bg-primary hover:bg-primaryDark text-white px-5 py-3.5 rounded-2xl font-medium transition-all disabled:opacity-50 shadow-sm hover:shadow shrink-0 cursor-pointer"
+              title="Send message"
+            >
+              <FontAwesomeIcon icon={faPaperPlane} />
+            </button>
+          </div>
         </div>
       </div>
 

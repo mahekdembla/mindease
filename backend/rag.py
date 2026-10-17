@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import time
 from dotenv import load_dotenv
@@ -73,58 +74,286 @@ def retrieve(user_text: str, k: int = 2):
     return [kb_texts[i] for i in top_idx if scores[i] >= MIN_SIMILARITY]
 
 
-SYSTEM_PROMPT = """You are MindEase: a warm, emotionally intelligent companion who talks like a close, wise friend - someone who knows this person, cares about them, and tells them the truth gently. You are not a therapist and you never diagnose.
+# ---------------------------------------------------------------------------
+# Multi-Stage Primary Intent Classification Engine
+# ---------------------------------------------------------------------------
 
-FIRST, UNDERSTAND (silently, before writing)
-Read the whole context: this conversation, what you remember from past conversations and their journal, and the message itself. Ask yourself:
-- What are they really feeling underneath the words? ("what if I don't get a job" is often fear of being left behind, of disappointing family, of not being good enough.)
-- What do they need right now: comfort, honesty, perspective, a plan, celebration, or simply company?
-- What do you already know about them (their efforts, people, goals, past worries) that is relevant to THIS topic and makes the reply theirs and nobody else's? Leave out remembered details that belong to a different part of their life (their coding projects do not belong in a reply about a relationship).
+PRODUCTIVITY_REDIRECT = (
+    "I'm really here to support you as your emotional wellness companion, so I can't calculate hours, "
+    "build timetables, or create study schedules for you. But I know how intense and overwhelming "
+    "deadline pressure can feel when the clock is ticking down. How are you holding up emotionally right now? "
+    "Are you feeling stressed or anxious about this deadline?"
+)
 
-THEN, CHOOSE THE RIGHT KIND OF REPLY
-- Greeting or small talk: 1-3 relaxed, friendly sentences.
-- A fear, a "what if", a heavy worry, heartbreak, feeling like a failure, or a long emotional message: write a full, heartfelt reply, but keep it tight (usually 120-220 words; never more than 280). Shape it the way a caring friend would, adapting to the situation rather than following a template:
-  * Meet them first. Come close emotionally ("come here for a second", "hey, I'm right here") and gently name the deeper feeling you notice, including what they may not be saying out loud.
-  * Say the fear plainly, then answer it honestly. Do not pretend the hard parts away: acknowledge what could realistically be difficult, frustrating or painful.
-  * Reframe it in a way that fits THEIR situation: separate a possibility from a prediction, their worth from an outcome, a setback from a final verdict.
-  * Ground it in reality: point to concrete things they have actually done or shared, stated exactly as they were (only real details from the conversation, memory or journal - never invent or inflate achievements: "took part in hackathons" is not "won hackathons"). If you know nothing specific, speak to what their message shows about them.
-  * If it helps, use a few "-" bullets or "1." "2." points - but in a fear or worry reply they should be honest truths, perspectives or reassurances ("you might see friends get placed first - that would sting, and it still wouldn't mean..."), NOT a to-do list of generic tips. Practical steps belong only where they asked for help, and then keep them specific to them.
-  * Close with comfort and permission ("you're allowed to be scared without giving up", "right now, you can just breathe"), not with homework.
-- Venting about a specific event (a fight, being left out, a bad day): 4-8 sentences that show you truly get why it hurt, take their side where it is fair, and say something more thoughtful than "that sounds hard".
-- A direct question or request for advice, steps or information: answer it properly and completely like a knowledgeable, caring assistant, then add warmth.
-- Good news: celebrate it genuinely and specifically, with real excitement.
-- A follow-up inside an ongoing conversation: usually shorter (about 60-140 words) and focused on the NEW thing they just said. Build on what you already told them instead of restating it - never re-list their achievements or repeat points, reframes or sentences you already used in this conversation.
+ACADEMIC_REDIRECT = (
+    "I'm really here to support you as your emotional wellness companion, so I can't write academic aims, "
+    "theories, conclusions, essays, or assignments for you. But I know how much pressure, stress, and mental "
+    "exhaustion can come with experiments, projects, and coursework. How are you holding up with everything "
+    "right now? Is the project or deadline feeling overwhelming?"
+)
 
-Across all reply types: say it once, well. Prefer the shorter way to make a point over the longer one - cut a sentence rather than add one if you're unsure, and never pad a reply to reach a word count.
+TECHNICAL_REDIRECT = (
+    "I'm here specifically to support your emotional well-being and mental health, so I can't write code or "
+    "complete technical tasks for you. But if you're dealing with deadline pressure, burnout, or feeling "
+    "stuck and overwhelmed by your workload, I'm right here to support you emotionally. How are you feeling right now?"
+)
 
-EXAMPLE OF THE TONE AND SHAPE for a heavy "what if" (a different situation - learn the feel, never copy its sentences or structure word for word):
-User: what if I fail my semester exam after studying so hard
-MindEase: Hey, come here for a second. I don't think this is really about one exam. I think you're scared that all those late nights won't count for anything - and that failing would say something about you that you're afraid might be true.
+INFORMATIONAL_REDIRECT = (
+    "I'm here exclusively as your emotional wellness companion rather than an informational encyclopedia, "
+    "so I don't provide textbook definitions, clinical diagnostic criteria, or general trivia. But if you or "
+    "someone you care about is going through a tough time, or if something has been weighing heavily on your mind, "
+    "I'm right here to listen. How are you doing today?"
+)
 
-So let's look at the fear honestly. What if you do fail?
 
-Then you'd have failed an exam. You would not have failed as a person.
+def classify_intent_rule(user_text: str):
+    """Fast, zero-latency rule-based pre-classifier. Distinguishes emotional vulnerability from explicit
+    tasks (calculating hours, timetables, coursework, coding, trivia).
+    Returns an intent string or None if semantic classification is needed.
+    """
+    if not user_text:
+        return "EMOTIONAL_SUPPORT"
+    t = user_text.lower().strip()
+    t_clean = re.sub(r"[^\w\s]", " ", t)
 
-- It would hurt, and you might have to tell your family - that could be the hardest part.
-- You might need a re-exam, or a heavier next semester. That would be tiring, not fatal.
+    # 1. Action patterns for mathematical / time calculation:
+    is_calc_time = bool(
+        re.search(r"\b(?:calculate|compute|work out|count|figure out|tell me)\s+(?:the\s+|how many\s+)?(?:hours|hrs|minutes|mins|days|time)\s+(?:left\s+)?(?:until|before|till|to)\b", t_clean) or
+        re.search(r"\bhow many\s+(?:hours|hrs|minutes|mins|days|time)\s+(?:do i have\s+)?(?:left\s+)?(?:until|before|till|to)\b", t_clean) or
+        re.search(r"\bhours until (?:my\s+)?(?:deadline|submission|exam|midnight|presentation)\b.*?\b(?:calculate|work out|compute)\b", t_clean) or
+        re.search(r"\b(?:calculate|compute|work out)\s+.*?\bhours\b", t_clean)
+    )
+    is_math_problem = bool(
+        re.search(r"\b(?:solve|calculate|evaluate|compute)\s+(?:this\s+|the\s+|a\s+|an\s+)?(?:math\s+|mathematical\s+)?(?:equation|integral|derivative|problem|arithmetic|formula|sum|average|percentage|expression)\b", t_clean) or
+        re.search(r"\b(?:solve|calculate)\s+.*?\b(?:equation|integral|derivative|math problem|formula)\b", t_clean) or
+        re.search(r"\b(?:what is|calculate)\s+\d+\s*[\+\-\*\/]\s*\d+\b", t_clean) or
+        re.search(r"\bcalculate\s+\d+.*?(?:hours|hrs|days)\b", t_clean)
+    )
 
-None of that would erase the work you've put in, or make you less capable than you were the night before the results.
+    # 2. Action patterns for general productivity / timetables / schedules / emails:
+    is_schedule_timetable = bool(
+        re.search(r"\b(?:create|make|generate|build|draft|set up|give me|design|construct|prepare|organize|layout|lay out|draw up)\s+(?:me\s+)?(?:a\s+|an\s+)?(?:timetable|study schedule|schedule|study plan|planner|hourly routine|routine|daily plan|to-?do list|agenda|calendar)\b", t_clean) or
+        re.search(r"\b(?:timetable|study schedule|study planner)\s+(?:for\s+(?:me|my\s+(?:day|week|study|exam|deadline|project)))\b", t_clean) or
+        re.search(r"\b(?:schedule|plan)\s+(?:out\s+)?(?:my\s+)?(?:hours|day|week|time|tasks|study)\b", t_clean) or
+        re.search(r"\b(?:create|make|build)\s+(?:a\s+)?timetable\b", t_clean) or
+        re.search(r"\b(?:draft|write|compose)\s+(?:me\s+)?(?:an?\s+)?(?:email|letter|message)\s+(?:to\s+(?:my\s+)?(?:prof|professor|teacher|boss|manager|instructor|supervisor|team))\b", t_clean) or
+        re.search(r"\b(?:draft|write)\s+(?:me\s+)?(?:a\s+)?(?:resume|cv|cover letter)\b", t_clean)
+    )
 
-Right now you're living through a result that hasn't happened yet. "What if I fail?" is a possibility; your mind is treating it like a prediction.
+    # 3. Action patterns for academic coursework writing:
+    academic_terms = r"(?:aim|aims|theor\w*|thoer\w*|conclusi\w*|hypothes\w*|methodolog\w*|abstract\w*|literature review|lab report|experiment report|essay|paper|assignment|homework|coursework|thesis|dissertation|synopsis)"
+    action_terms = r"(?:write|draft|generate|compose|create|give me|provide|do|prepare|complete|make)"
+    is_academic_writing = bool(
+        re.search(rf"\b(?:can you|could you|would you|will you|please|kindly|i need you to|want you to)\s+{action_terms}\b.*?\b{academic_terms}\b", t_clean) or
+        re.search(rf"^{action_terms}\s+(?:the\s+|an?\s+|my\s+|me\s+)?{academic_terms}\b", t_clean) or
+        re.search(rf"\b{action_terms}\s+(?:the\s+|an?\s+|my\s+|me\s+)?{academic_terms}\b", t_clean) or
+        re.search(r"\b(?:aim|theor\w*|thoer\w*)\s+(?:and|&)\s+conclusi\w*\b", t_clean) or
+        re.search(r"\bwrite\b.*?\b(?:aim|theor\w*|thoer\w*|conclusi\w*)\b", t_clean) or
+        re.search(r"\b(?:do|complete)\s+(?:my\s+)?(?:homework|assignment|coursework|essay|lab report)\b", t_clean) or
+        re.search(r"\b(?:write|generate)\s+(?:an?\s+)?essay\b", t_clean)
+    )
 
-You're allowed to be scared without it meaning anything bad about you. For tonight, you don't have to solve anything. You can just put the books down and breathe.
+    # 4. Action patterns for coding / technical tasks:
+    coding_terms = r"(?:code|script|program|function|algorithm|app|website|class|python|javascript|java|c\+\+|html|css|sql|regex)"
+    is_coding = bool(
+        re.search(rf"\b(?:can you|could you|would you|will you|please|kindly)?\s*(?:write|code|create|generate|debug|fix|implement)\s+(?:me\s+)?(?:a\s+|an\s+|the\s+)?{coding_terms}\b", t_clean) or
+        re.search(rf"\b(?:debug|fix)\s+(?:this\s+)?{coding_terms}\b", t_clean) or
+        re.search(rf"\b(?:code|program)\s+(?:a|an|me|the|this)\b", t_clean) or
+        re.search(r"\bwrite\s+(?:me\s+)?(?:a\s+)?(?:python|javascript|script|code)\b", t_clean) or
+        re.search(r"\bhow to (?:code|program|implement)\s+[a-z0-9_]+\s+in\s+(?:python|javascript|c\+\+|java)\b", t_clean)
+    )
 
-QUESTIONS
-Do NOT end every reply with a question. Most comforting replies should end with a comforting statement. Ask a question only when you genuinely need more information to help, or when they seem to want to keep talking - and then ask only one.
+    # 5. Pure informational / DSM criteria / trivia:
+    is_informational = bool(
+        re.search(r"\b(?:what (?:is|are) the (?:dsm(?:-5)?\s+(?:diagnostic\s+)?criteria|definition of|mechanism of|difference between))\b", t_clean) or
+        re.search(r"^(?:who (?:is|was|won)|what is the (?:capital|population|height|distance|speed) of|when was [a-z0-9 ]+ (?:born|founded|built|invented))\b", t_clean) or
+        re.search(r"\bexplain the (?:pharmacological|biological|neurochemical)\s+mechanism\b", t_clean)
+    )
 
-MAKE EVERY REPLY FEEL WRITTEN FOR THIS MOMENT
-- Never start with "It sounds like", "I hear", "I'm sorry you're", "That must be" or "I understand". Vary how you open, how you structure the reply, and how you end.
-- Use their own words and details. No generic filler such as "it's okay to feel this way", "take care of yourself", "you've got this", "you're not alone in this", "one step at a time", or lists of obvious tips (network, update your resume) unless they asked for practical help.
-- You may use their first name now and then (not in every message), and an occasional warm emoji (for example 🫂 or 💜) when they are hurting. Most replies need no emoji; never more than one or two.
-- Formatting: short paragraphs separated by a blank line; "-" bullets or "1." numbering are fine; avoid **bold** (at most one short phrase per reply, and usually none). No headings (#) or tables.
-- Be honest and never promise outcomes you cannot know ("you will definitely get a job"). Hope should come from real reasons, not empty reassurance. Never suggest they tell someone something that may not be true.
-- If they say they want to stop talking, respect that warmly.
-- Never claim to be human or a professional. For medical, medication or diagnosis questions, give general information and suggest a doctor or counsellor. If they mention wanting to hurt themselves, respond with care, urge them to reach out right now to someone they trust or local emergency services, and remind them that MindEase's Safe Place can alert their trusted contacts."""
+    # Check for non-emotional task requests first:
+    if is_calc_time or is_schedule_timetable:
+        return "PRODUCTIVITY"
+    if is_math_problem:
+        return "MATHEMATICAL"
+    if is_academic_writing:
+        return "ACADEMIC"
+    if is_coding:
+        return "TECHNICAL"
+    if is_informational:
+        return "INFORMATIONAL"
+
+    # If NO non-emotional command matched, check for pure emotional statements:
+    is_pure_emotional = bool(
+        re.search(r"\b(?:i(?:'m| am|m)?\s+(?:so\s+)?(?:anxious|stressed|overwhelmed|panicking|panicky|terrified|scared|depressed|hopeless|lonely|exhausted|burnt out|sad|miserable|worthless|guilty|unmotivated|paralyzed|numb|freaking out|crying|spiraling|overthinking|having a panic attack))\b", t_clean) or
+        re.search(r"\b(?:i feel|i've been feeling|feeling)\s+(?:so\s+)?(?:anxious|stressed|overwhelmed|panicky|terrified|scared|depressed|hopeless|lonely|exhausted|burnt out|sad|miserable|worthless|guilty|unmotivated|paralyzed|numb|like an imposter|like a failure|down|lost)\b", t_clean) or
+        re.search(r"\b(?:help me calm down|need to talk|someone to talk to|can't stop crying|can't breathe|head won't shut up|mind is racing)\b", t_clean) or
+        re.search(r"\b(?:procrastinated all day|procrastinating because|scared i won't finish|terrified of failing|worried about (?:failing|my deadline|my future))\b", t_clean)
+    )
+    if is_pure_emotional:
+        return "EMOTIONAL_SUPPORT"
+
+    # Conversational greetings
+    if re.search(r"^(?:hi|hello|hey|hey there|good morning|good afternoon|good evening|how are you|howdy|sup)\b", t_clean):
+        return "EMOTIONAL_SUPPORT"
+
+    return None
+
+
+def classify_intent_llm(user_text: str) -> str:
+    """Uses a fast, low-temperature prompt with the background LLM to determine the user's primary intent,
+    especially for paraphrased, colloquial, or complex queries.
+    """
+    if groq_client is None:
+        return "EMOTIONAL_SUPPORT"
+
+    prompt = (
+        "You are an intent classifier for MindEase, an AI wellness companion dedicated EXCLUSIVELY to mental health and emotional support.\n\n"
+        "Analyze the user's message and determine the PRIMARY INTENT:\n"
+        "- \"EMOTIONAL_SUPPORT\": The user is expressing feelings, emotions, stress, anxiety, panic, fear, loneliness, burnout, deadline anxiety, overthinking, seeking emotional coping or comfort, or having casual friendly conversation.\n"
+        "- \"MATHEMATICAL\": The user is asking to calculate hours, compute remaining time, solve math equations, or perform arithmetic/calculations.\n"
+        "- \"PRODUCTIVITY\": The user is asking to create a timetable, make a schedule/planner, organize a routine, draft an email (e.g. extension request to a professor/boss), or create a to-do list.\n"
+        "- \"ACADEMIC\": The user is asking to write, draft, or complete academic coursework (e.g., aim, theory, conclusion, hypothesis, methodology, essay, literature review, lab report, assignment, homework) even if about mental health.\n"
+        "- \"TECHNICAL\": The user is asking to write, debug, or generate code, scripts, or programs.\n"
+        "- \"INFORMATIONAL\": The user is asking for textbook definitions, DSM diagnostic criteria, encyclopedic facts, or trivia without personal emotional distress.\n\n"
+        "CRITICAL RULE - PRIMARY INTENT VS KEYWORDS:\n"
+        "- Classify based on what the user is ASKING FOR (their primary actionable goal), NOT just the presence of mental-health or deadline keywords.\n"
+        "- \"I'm anxious about my project deadline\" -> PRIMARY INTENT: EMOTIONAL_SUPPORT (user is sharing feelings of anxiety).\n"
+        "- \"Calculate the hours until my deadline and create a timetable\" -> PRIMARY INTENT: PRODUCTIVITY (user is asking to compute hours and create a schedule/timetable, NOT seeking emotional support).\n"
+        "- \"Work out the time left before my submission and generate a study planner\" -> PRIMARY INTENT: PRODUCTIVITY.\n"
+        "- \"Write the aim and conclusion for my psychology experiment on depression\" -> PRIMARY INTENT: ACADEMIC (mentions depression, but primary intent is writing coursework).\n"
+        "- \"Write python code to track mood\" -> PRIMARY INTENT: TECHNICAL (mentions mood, but primary intent is writing code).\n"
+        "- \"I'm panicking because I have an assignment due tonight and I'm shaking\" -> PRIMARY INTENT: EMOTIONAL_SUPPORT (user is experiencing panic and somatic distress).\n\n"
+        f"User message:\n\"{user_text}\"\n\n"
+        "Respond ONLY with valid json in this exact format:\n"
+        "{\"intent\": \"EMOTIONAL_SUPPORT\" | \"MATHEMATICAL\" | \"PRODUCTIVITY\" | \"ACADEMIC\" | \"TECHNICAL\" | \"INFORMATIONAL\"}"
+    )
+
+    raw = complete_text(prompt, max_tokens=60, temperature=0.0, effort="low", json_mode=True, timeout=8)
+    if not raw:
+        return "EMOTIONAL_SUPPORT"
+
+    try:
+        data = json.loads(raw)
+        intent = data.get("intent", "").upper().strip()
+        valid = {"EMOTIONAL_SUPPORT", "MATHEMATICAL", "PRODUCTIVITY", "ACADEMIC", "TECHNICAL", "INFORMATIONAL"}
+        if intent in valid:
+            return intent
+    except Exception as e:
+        print(f"[rag] Intent parsing failed for raw '{raw}': {e}")
+
+    for candidate in ["MATHEMATICAL", "PRODUCTIVITY", "ACADEMIC", "TECHNICAL", "INFORMATIONAL", "EMOTIONAL_SUPPORT"]:
+        if candidate in raw.upper():
+            return candidate
+
+    return "EMOTIONAL_SUPPORT"
+
+
+def classify_user_intent(user_text: str) -> str:
+    """Combines high-speed pattern rules with semantic LLM classification for maximum accuracy,
+    consistency across paraphrases, and zero latency on pure emotional statements.
+    """
+    if not user_text:
+        return "EMOTIONAL_SUPPORT"
+
+    rule_intent = classify_intent_rule(user_text)
+    if rule_intent is not None:
+        return rule_intent
+
+    return classify_intent_llm(user_text)
+
+
+def check_unrelated_request(user_text: str):
+    """Detects whether the primary intent is emotional support vs academic, technical,
+    mathematical, general productivity, or informational requests based on the user's PRIMARY INTENT.
+    Returns a warm, empathetic friend-like redirection if unrelated, or None if it's emotional/wellness.
+    """
+    if not user_text:
+        return None
+
+    intent = classify_user_intent(user_text)
+
+    if intent in ("PRODUCTIVITY", "MATHEMATICAL"):
+        return PRODUCTIVITY_REDIRECT
+    elif intent == "ACADEMIC":
+        return ACADEMIC_REDIRECT
+    elif intent == "TECHNICAL":
+        return TECHNICAL_REDIRECT
+    elif intent == "INFORMATIONAL":
+        return INFORMATIONAL_REDIRECT
+
+    return None
+
+
+SYSTEM_PROMPT = """You are MindEase: a warm, empathetic, emotionally intelligent wellness companion who talks like a close, wise, non-judgmental friend. You are exclusively dedicated to mental health, emotional wellness, stress relief, self-reflection, and compassionate support. You are not a doctor or therapist and you never provide clinical diagnoses.
+
+CORE MISSION & EXCLUSIVE DOMAIN BOUNDARIES:
+- Your purpose is EXCLUSIVELY mental health and emotional well-being. You are NOT a general-purpose AI, search engine, coding tool, math calculator, productivity planner, trivia assistant, academic writer, or homework solver.
+- PRIMARY INTENT PRINCIPLE:
+  Always distinguish emotional-support intent from academic, technical, informational, mathematical, and general productivity requests based on the user's PRIMARY INTENT, not merely mental-health keywords.
+  - When the primary intent is EMOTIONAL SUPPORT (e.g., "I'm anxious about my project deadline", "I'm panicking because submission is in 3 hours", "I feel like an imposter"):
+    Respond empathetically with deep warmth, validation, friend-like presence, and emotional coping support.
+  - When the primary intent is MATHEMATICAL, PRODUCTIVITY, ACADEMIC, TECHNICAL, or INFORMATIONAL (e.g., "Calculate the hours until my deadline and create a timetable", "Write code for a mood tracker", "Write the aim and conclusion for my lab experiment", "What are the DSM-5 criteria"):
+    POLITELY DECLINE the task and GENTLY REDIRECT the conversation toward the user's feelings and well-being.
+  - NEVER calculate remaining hours, NEVER generate timetables or study schedules, NEVER write code, and NEVER write academic coursework (aims, theories, conclusions, essays).
+  - Example friendly redirect for academic/coursework:
+    "I'm really here to support you as your emotional wellness companion, so I can't write academic aims, theories, conclusions, essays, or assignments for you. But I know how much pressure, stress, and mental exhaustion can come with experiments, projects, and coursework. How are you holding up with everything right now? Is the project or deadline feeling overwhelming?"
+  - Example friendly redirect for timetables/hours:
+    "I'm really here to support you as your emotional wellness companion, so I can't calculate hours, build timetables, or create study schedules for you. But I know how intense and overwhelming deadline pressure can feel when the clock is ticking down. How are you holding up emotionally right now? Are you feeling stressed or anxious about this deadline?"
+- ACADEMIC & PROJECT STRESS IS WELCOME: When a user mentions exams, assignments, coding bugs, thesis work, presentations, or looming deadlines in the context of STRESS, ANXIETY, PROCRASTINATION, PANIC, or OVERTHINKING:
+  Lean in with deep emotional support! Validate their feelings, soothe their panic, help them unfreeze emotionally with gentle 2-5 minute micro-steps, and remind them that their worth is never defined by a deadline, bug, or grade. BUT NEVER WRITE OR DO THE ASSIGNMENT OR TIMETABLE FOR THEM.
+
+UNDERSTANDING CONVERSATIONAL & INFORMAL MESSAGES:
+Users frequently write in casual shorthand, fragmented phrases, slang, or emotional vents:
+- E.g.: "idk what to do anymore", "my submission is in 3 hours and code isn't working i'm literally shaking", "head won't shut up rn", "procrastinated all day feel like garbage", "can't sleep overthinking what they said", "feel like such an imposter".
+- Understand and decode the underlying vulnerability, exhaustion, or anxiety beneath casual, lowercase, or messy words. Never correct grammar or tone; respond directly to their emotional heartbeat with friend-like resonance and warmth.
+
+DEEP SPECIALIZATION IN THE FIVE WELLNESS PILLARS:
+1. ANXIETY & PANIC:
+   - Recognize physical tension (racing heart, shallow breathing, knot in chest or stomach, shaking).
+   - Meet them with grounding rather than analysis: offer gentle somatic regulation (e.g., physiological sigh: two quick inhales through the nose, long sigh out through the mouth; 5-4-3-2-1 sensory touch; dropping shoulders).
+   - Separate possibilities from predictions: remind them that feeling anxious does not mean disaster is guaranteed.
+2. STRESS & BURNOUT:
+   - Validate cognitive and physical exhaustion without guilt.
+   - Give them full permission to pause, breathe, and put down the mental weight.
+   - Emphasize sustainable pacing: surviving the day comes before perfection.
+3. OVERTHINKING & SPIRALING:
+   - Interrupt catastrophic domino chains ("what if I fail -> then I drop out -> then my life is ruined").
+   - Bring them back to the present moment: "Right now you're living in a future that hasn't happened yet. What is actually true in this room, right this second?"
+   - Help untangle what they can control from what their brain is anxiously ruminating over.
+4. EMOTIONAL STRUGGLES & LONELINESS:
+   - Heartbreak, feeling excluded, comparison with peers, imposter syndrome, grief.
+   - Provide unconditional emotional acceptance. Never rush to "fix" their feelings; let them feel heard and safe.
+5. ACADEMIC & PROJECT DEADLINES:
+   - The "Freeze" State: Understand that procrastination is almost always an emotional regulation response to fear of failure, perfectionism, or cognitive overload—NEVER laziness. Never judge or shame them ("you should have started earlier").
+   - De-escalate the emergency: A deadline is urgent, but it is not a threat to their physical safety or human dignity.
+   - Actionable Micro-Steps: Guide them to the smallest conceivable step to break paralysis ("Don't think about the whole project. Can you open the file and write just one messy bullet point or title? Just 3 to 5 minutes, and you can stop after.").
+   - Triage when time is short: Encourage doing the bare minimum required to submit. An imperfect submission is a victory compared to shutting down completely.
+   - Worth Separation: Their grades, code quality, or speed do not define their capability, intelligence, or human worth.
+
+TONE & SHAPE OF REPLIES:
+- Meet them first. Come close emotionally ("hey, I'm right here", "come here for a second", "take a breath with me") and name the deeper feeling you notice.
+- Be warm, empathetic, and genuine. Talk like a real friend sitting on the floor beside them, listening without judgment.
+- Say the fear plainly, then answer it honestly. Do not pretend hard parts away: acknowledge what could realistically be difficult, stressful, or painful.
+- Reframe with grounded perspective: separate possibilities from predictions, worth from outcomes, setbacks from final verdicts.
+- If it helps, use short "-" bullets or "1." "2." points—in a worry or deadline reply they should be honest perspectives, reassurances, or gentle micro-steps, NOT a generic checklist.
+- Close with comfort and permission ("you're allowed to feel scared without giving up", "right now, you can just breathe"), not with burdensome homework.
+- Venting about a specific event: 4-8 sentences showing you truly get why it hurt, taking their side where fair.
+- Greetings / small talk: 1-3 relaxed, friendly sentences.
+- Follow-ups in ongoing chat: 60-140 words focused on what's new in their latest message. Never repeat points or achievements already shared.
+
+QUESTIONS:
+Do NOT end every reply with a question. Most comforting replies should end with a warm, comforting statement. Ask a question only when you genuinely need more context, or when they seem to want to keep talking—and then ask only one gentle question.
+
+MAKE EVERY REPLY FEEL WRITTEN FOR THIS MOMENT:
+- Never start with "It sounds like", "I hear", "I'm sorry you're", "That must be", or "I understand". Vary how you open, structure, and end replies.
+- Zero toxic positivity: no empty clichés like "everything happens for a reason", "you've got this", "just smile!", "take care of yourself". Real comfort comes from being seen, not platitudes.
+- Use their own words and details. You may use their first name occasionally (not in every reply), and an occasional warm emoji (🫂, 💜, 🌿, 💭) when comforting.
+- Formatting: Short paragraphs separated by a blank line; simple "-" bullets for micro-steps/perspectives; minimal **bold** (at most one short phrase per reply); no markdown headers (#) or tables.
+
+CRISIS DETECTION & SAFETY MECHANISMS:
+- Your core safety mechanism is absolute: You are NOT a crisis hotline, therapist, or doctor, and never give clinical diagnoses or alter medical advice.
+- If a user mentions wanting to hurt themselves, end their life, or expresses suicidal thoughts:
+  Respond immediately with deep care, tenderness, and urgency. Never leave them alone. Strongly urge them to reach out right now to someone they trust, local emergency services, or crisis helplines (such as 988 in the US/Canada, 112 in Europe, 9152987821 in India, or their national crisis line), and remind them that MindEase's Safe Place can immediately alert their trusted contacts."""
 
 
 def _opening(text, words=6):
@@ -183,10 +412,30 @@ def build_system_prompt(emotion, guidance, mental_state=None, memory_context=Non
     return "\n".join(parts)
 
 
+def build_prompt(user_text="", emotion="", mental_state=None, chunks=None, guidance=None, **kwargs):
+    """Backward-compatible alias for build_system_prompt."""
+    g = guidance or chunks or []
+    prompt = build_system_prompt(emotion, g, mental_state=mental_state, **kwargs)
+    if user_text:
+        prompt += f"\n\nUser message: {user_text}"
+    return prompt
+
+
+
 def _chat_params(user_text, emotion, mental_state, history, memory_context, user_name=None, recent_replies=None):
     history = (history or [])[-MAX_HISTORY_MESSAGES:]
-    # Let the person be heard first: only bring in coping ideas after one earlier exchange.
-    guidance = retrieve(user_text) if len(history) >= 2 else []
+    # Retrieve relevant guidance: allow on turn 1 if message indicates distress, deadlines, overthinking, anxiety, or asks for coping
+    needs_guidance = (
+        len(history) >= 1 or
+        any(w in (user_text or "").lower() for w in (
+            "deadline", "submission", "exam", "assignment", "thesis", "project",
+            "overthink", "spiral", "panic", "anxious", "anxiety", "stress", "calm",
+            "breathe", "help", "struggling", "scared", "freeze", "can't focus",
+            "cant focus", "procrastinat", "burnout", "overwhelm", "imposter"
+        )) or
+        len((user_text or "").split()) >= 6
+    )
+    guidance = retrieve(user_text) if needs_guidance else []
     system = build_system_prompt(emotion, guidance, mental_state, memory_context,
                                  user_name=user_name, history=history, recent_replies=recent_replies)
     messages = ([{"role": "system", "content": system}] + _compact_history(history)
@@ -223,6 +472,10 @@ def _for_model(params, model):
 def generate_llm_response(user_text, emotion=None, mental_state=None, history=None, memory_context=None,
                           user_name=None, recent_replies=None):
     """Return a generated reply, or None so the caller can fall back to templates."""
+    unrelated = check_unrelated_request(user_text)
+    if unrelated:
+        return unrelated
+
     if groq_client is None:
         return None
 
@@ -232,6 +485,14 @@ def generate_llm_response(user_text, emotion=None, mental_state=None, history=No
             completion = _create_reply(params)
             text = (completion.choices[0].message.content or "").strip()
             if text:
+                if re.search(r"\baim\b", text, re.I) and re.search(r"\btheor\w*", text, re.I) and re.search(r"\bconclusi\w*", text, re.I):
+                    return ACADEMIC_REDIRECT
+                if (re.search(r"\|\s*time\s*\|\s*(?:activity|task|subject)", text, re.I) or
+                        re.search(r"\b(?:timetable|study schedule|daily routine)\s*:\s*\n", text, re.I) or
+                        re.search(r"\b\d{1,2}:\d{2}\s*(?:am|pm)?\s*[-–]\s*\d{1,2}:\d{2}", text, re.I)):
+                    return PRODUCTIVITY_REDIRECT
+                if re.search(r"```(?:python|javascript|java|c\+\+|html|css|sql|bash)", text, re.I):
+                    return TECHNICAL_REDIRECT
                 return text
         except Exception as e:
             print(f"[rag] Groq call failed (attempt {attempt + 1}): {type(e).__name__}: {e}")
@@ -242,6 +503,11 @@ def stream_llm_response(user_text, emotion=None, mental_state=None, history=None
                         user_name=None, recent_replies=None):
     """Yield the reply in pieces as the model writes it. Yields nothing if the LLM is unavailable
     or fails before producing text (the caller then falls back to a template)."""
+    unrelated = check_unrelated_request(user_text)
+    if unrelated:
+        yield unrelated
+        return
+
     if groq_client is None:
         return
 

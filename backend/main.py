@@ -28,7 +28,7 @@ from langdetect import detect as detect_language, DetectorFactory  # type: ignor
 from langdetect.lang_detect_exception import LangDetectException  # type: ignore # pyrefly: ignore [missing-import]
 DetectorFactory.seed = 0  # deterministic detection (langdetect is otherwise randomized per call)
 
-from rag import generate_llm_response, stream_llm_response, translate_to_english, translate_like
+from rag import generate_llm_response, stream_llm_response, translate_to_english, translate_like, check_unrelated_request
 import memory
 from database.mongodb import db_manager
 from auth import (
@@ -634,13 +634,18 @@ def normalize_mental_state(label):
 
 NEGATIVE_CUES = {
     "anger": ["fight", "fought", "argument", "argued", "yelled", "angry", "furious",
-              "annoyed", "betrayed"],
-    "anxiety": ["anxious", "worried", "scared", "afraid", "nervous", "panic",
-                "can't sleep", "cant sleep"],
+              "annoyed", "betrayed", "unfair", "frustrated", "pissed", "cheated"],
+    "anxiety": ["anxious", "worried", "scared", "afraid", "nervous", "panic", "panicking",
+                "can't sleep", "cant sleep", "deadline", "submission", "exam", "viva",
+                "assignment", "thesis", "overthinking", "overthink", "spiraling", "spiral",
+                "shaking", "freeze", "freezing", "paralyzed", "racing thoughts", "what if",
+                "freaking out", "dread", "dreading"],
     "negative": ["hard day", "bad day", "rough day", "tough day", "terrible day",
                  "sad", "lonely", "crying", "cried", "upset", "hurt", "broke up",
-                 "breakup", "failed", "exhausted", "miserable", "stressed",
-                 "overwhelmed", "passed away", "lost my"],
+                 "breakup", "failed", "failing", "exhausted", "miserable", "stressed",
+                 "overwhelmed", "passed away", "lost my", "burnout", "burned out",
+                 "burnt out", "procrastinating", "procrastinated", "imposter",
+                 "behind in life", "cant focus", "can't focus", "drowning", "hate myself"],
 }
 
 def correct_emotion_with_cues(emotion, user_text):
@@ -662,22 +667,35 @@ def generate_response(emotion, mental_state, user_text, history=None, memory_con
                                       user_name=user_name, recent_replies=recent_replies)
     if llm_reply:
         return llm_reply
-    return fallback_reply(emotion)
+    return fallback_reply(emotion, user_text)
 
 
-def fallback_reply(emotion):
+def fallback_reply(emotion, user_text=""):
     # Fallback templates, used only when the LLM is unavailable. They key off `emotion`
-    # (the app's 5-class mood label), which is reliable with both the fine-tuned and hub models.
-    if emotion == "negative":
-        return "I'm sorry things feel heavy right now. What's been weighing on you the most?"
+    # and context cues with warm, empathetic, friend-like support.
+    t = (user_text or "").lower()
+
+    if any(k in t for k in ("deadline", "submission", "exam", "assignment", "project", "thesis", "viva")):
+        return ("Hey, come here and take a breath with me. Looming deadlines and project pressure can trigger "
+                "that heavy freeze in your chest. You don't have to conquer the whole mountain in this exact minute. "
+                "What's the single biggest thing pressing on your mind right now?")
+
+    if any(k in t for k in ("overthink", "overthinking", "spiral", "spiraling", "racing thoughts", "can't sleep", "cant sleep", "what if")):
+        return ("I'm right here with you. When thoughts start looping and spiraling, everything feels so loud and scary. "
+                "Let's ground things together for a second—what's been spinning in your head the most today?")
+
+    if emotion == "anxiety":
+        return ("I can feel how much stress and tension you're carrying right now. Take a slow, gentle breath with me. "
+                "I'm right here listening—what's feeling most overwhelming at this moment?")
+    elif emotion == "negative":
+        return ("I'm really glad you reached out. It takes courage to say when things feel heavy or exhausting. "
+                "I'm right here and there's zero judgment here—tell me what's been weighing on you.")
     elif emotion == "anger":
-        return "That sounds really frustrating. What happened?"
-    elif emotion == "anxiety":
-        return "That sounds stressful. What's been on your mind the most?"
+        return "That sounds genuinely frustrating, and you have every right to feel annoyed. Take all the space you need—what happened?"
     elif emotion == "positive":
-        return "That's lovely to hear 😊 What made today feel good?"
+        return "That brings a real smile to my face 😊 What made things feel good today?"
     else:
-        return "I'm here and listening. What's on your mind?"
+        return "Hey there! I'm right here with you as your wellness friend. Whatever's on your mind—big, small, or tangled—I'm listening."
 
 
 # SAFETY DETECTION
@@ -1215,15 +1233,21 @@ def chat(req: ChatRequest, current_user: Optional[dict] = Depends(get_optional_c
     if analysis["crisis"]:
         response = crisis_response_for(user_input, analysis["language"])
     else:
-        response = generate_response(
-            analysis["emotion"],
-            analysis["support_state"],
-            user_input,
-            history=load_conversation_history(user_id, conv_id),
-            memory_context=memory.recall_context(user_id, conv_id, user_input),
-            user_name=_first_name(current_user),
-            recent_replies=load_recent_replies(user_id, conv_id)
-        )
+        unrelated_redirect = check_unrelated_request(user_input)
+        if unrelated_redirect:
+            if analysis.get("language") and analysis["language"] != "en":
+                unrelated_redirect = translate_like(unrelated_redirect, user_input)
+            response = unrelated_redirect
+        else:
+            response = generate_response(
+                analysis["emotion"],
+                analysis["support_state"],
+                user_input,
+                history=load_conversation_history(user_id, conv_id),
+                memory_context=memory.recall_context(user_id, conv_id, user_input),
+                user_name=_first_name(current_user),
+                recent_replies=load_recent_replies(user_id, conv_id)
+            )
 
     assigned_conv_id, assigned_title = _save_and_remember(user_input, response, analysis, user_id, conv_id)
     return _chat_result(analysis, response, assigned_conv_id, assigned_title)
@@ -1251,21 +1275,28 @@ def chat_stream(req: ChatRequest, current_user: Optional[dict] = Depends(get_opt
                 pieces.append(crisis_text)
                 yield _sse({"type": "delta", "text": crisis_text})
             else:
-                for piece in stream_llm_response(
-                    user_input,
-                    analysis["emotion"],
-                    analysis["support_state"],
-                    load_conversation_history(user_id, conv_id),
-                    memory.recall_context(user_id, conv_id, user_input),
-                    user_name=_first_name(current_user),
-                    recent_replies=load_recent_replies(user_id, conv_id),
-                ):
-                    pieces.append(piece)
-                    yield _sse({"type": "delta", "text": piece})
-                if not "".join(pieces).strip():
-                    fallback = fallback_reply(analysis["emotion"])
-                    pieces = [fallback]
-                    yield _sse({"type": "delta", "text": fallback})
+                unrelated_redirect = check_unrelated_request(user_input)
+                if unrelated_redirect:
+                    if analysis.get("language") and analysis["language"] != "en":
+                        unrelated_redirect = translate_like(unrelated_redirect, user_input)
+                    pieces.append(unrelated_redirect)
+                    yield _sse({"type": "delta", "text": unrelated_redirect})
+                else:
+                    for piece in stream_llm_response(
+                        user_input,
+                        analysis["emotion"],
+                        analysis["support_state"],
+                        load_conversation_history(user_id, conv_id),
+                        memory.recall_context(user_id, conv_id, user_input),
+                        user_name=_first_name(current_user),
+                        recent_replies=load_recent_replies(user_id, conv_id),
+                    ):
+                        pieces.append(piece)
+                        yield _sse({"type": "delta", "text": piece})
+                    if not "".join(pieces).strip():
+                        fallback = fallback_reply(analysis["emotion"], user_input)
+                        pieces = [fallback]
+                        yield _sse({"type": "delta", "text": fallback})
 
             response = "".join(pieces).strip()
             assigned_conv_id, assigned_title = _save_and_remember(user_input, response, analysis, user_id, conv_id)
